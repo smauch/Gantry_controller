@@ -8,14 +8,6 @@
 
 #include <opencv2/opencv.hpp>
 
-
-int dfsForCVMat(int **image);
-void printMatrix(cv::Mat m);
-int** convertMatToArray(cv::Mat mat);
-int** detectColor(int **image, int limit);
-void printArray(int **array);
-int** getZero2DArray();
-cv::Mat convertArrayToMat(int **array);
-cv::Mat circleROI(cv::Mat image);
+cv::Mat circleROI(cv::Mat image, cv::Point center, int radius, bool inside);
 
 #endif //UNTITLED_HELPER_H
