@@ -2,9 +2,14 @@
 #include <cmath>
 #include "Polar.h"
 
-Polar::Polar(double radius, double angle) {
-    radius = radius;
-    angle = angle;
+Polar::Polar(double radiusValue, double angleValue) {
+    radius = radiusValue;
+    angle = angleValue;
+}
+
+Polar::Polar(int x, int y) {
+    radius = sqrt(pow(x, 2) + pow(y, 2));
+    angle = atan(y/x);
 }
 
 Polar::Polar() {

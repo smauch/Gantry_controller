@@ -8,6 +8,7 @@ class Polar {
 
     public:
         Polar(double radius, double angle);
+        Polar(int x, int y);
 
         Polar();
             

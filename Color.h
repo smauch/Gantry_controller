@@ -27,6 +27,7 @@ class Color {
     public:
         Color(int blueValue, int greenValue, int redValue);
         Color(double blueValue, double greenValue, double redValue);
+        Color();
 
         Colors getColor();
         Scalar getAsScalar();

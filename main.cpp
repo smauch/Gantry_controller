@@ -1,5 +1,6 @@
 #include "opencv2/opencv.hpp"
 #include <list>
+#include <iterator>
 #include "imageStuff.h"
 #include "Candy.h"
 #include "Color.h"
@@ -8,10 +9,11 @@ using namespace cv;
 using namespace std;
 using namespace std::chrono;
 
+
 const int IMAGE_SIZE = 1080;
-const Point CENTER(IMAGE_SIZE / 2 - 8, IMAGE_SIZE / 2 + 25);
 const int INNER_RADIUS = 90;
 const int OUTER_RADIUS = IMAGE_SIZE / 2;
+
 
 int main( int argc, char** argv ) {
     list<Candy> chocolateList;
@@ -27,6 +29,10 @@ int main( int argc, char** argv ) {
     int iLowV = 0;
     int iHighV = 255;
 
+    int centerX = 550;
+    int centerY = 550;
+
+
     //Create trackbars in "Control" window
     createTrackbar("LowH", "Control", &iLowH, 179); //Hue (0 - 179)
     createTrackbar("HighH", "Control", &iHighH, 179);
@@ -36,6 +42,9 @@ int main( int argc, char** argv ) {
 
     createTrackbar("LowV", "Control", &iLowV, 255); //Value (0 - 255)
     createTrackbar("HighV", "Control", &iHighV, 255);
+
+    createTrackbar("Center X", "Control", &centerX, IMAGE_SIZE - 1);
+    createTrackbar("Center Y", "Control", &centerY, IMAGE_SIZE - 1);
 
     int frame = 0;
     while (true) {
@@ -47,8 +56,9 @@ int main( int argc, char** argv ) {
         }
         Mat imgOriginal;
         cap >> imgOriginal;
-        Mat croppedImage = circleROI(imgOriginal, CENTER, INNER_RADIUS, false);
-        croppedImage = circleROI(croppedImage, CENTER, OUTER_RADIUS, true);
+        Point imageCenter(centerX, centerY);
+        Mat croppedImage = circleROI(imgOriginal, imageCenter, INNER_RADIUS, false);
+        croppedImage = circleROI(croppedImage, imageCenter, OUTER_RADIUS, true);
 
         Mat imgHSV;
         cvtColor(croppedImage, imgHSV, COLOR_BGR2HSV); //Convert the captured frame from BGR to HSV
@@ -75,21 +85,49 @@ int main( int argc, char** argv ) {
             allMoments[i] = moments(contours[i], false);
         }
 
+        list<Candy> detectedCandies; 
+
         for (int i = 0; i < contours.size(); i++) {
-            if (allMoments[i].m00 > 1000) {
+            if (allMoments[i].m00 > 1000 && allMoments[i].m00 < 20000) {
                 Point center(allMoments[i].m10 / allMoments[i].m00, allMoments[i].m01 / allMoments[i].m00);
-                Color averageColor = getAverageColor(imgHSV, center);
+                Color averageColor;
+                try {
+                    averageColor = getAverageColor(imgHSV, center);
+                } catch (...) {
+                    continue;
+                }
                 Colors fittingColor = averageColor.getColor();
+                Polar polarCenter(center.x, center.y);
+                detectedCandies.push_back(Candy(fittingColor, polarCenter));
+
+
                 Scalar colorValue = Color::getColorValue(fittingColor);
                 Point topLeft = center + Point(-50, 50);
                 Point bottomRight = center + Point(50, -50);
                 rectangle(imgOriginal, topLeft, bottomRight, colorValue, 5);
-                putText(imgOriginal, Color::getColorName(fittingColor), topLeft + Point(0, 30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, Scalar(0, 0, 0));
-                putText(imgOriginal, averageColor.getAsString(), topLeft + Point(0, 50), FONT_HERSHEY_COMPLEX_SMALL, 0.8, Scalar(0, 0, 0));
+                putText(imgOriginal, Color::getColorName(fittingColor), topLeft + Point(0, 30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, colorValue);
+                putText(imgOriginal, averageColor.getAsString(), topLeft + Point(0, 50), FONT_HERSHEY_COMPLEX_SMALL, 0.8, colorValue);
             }
         }
 
-        //    imshow("Thresholded Image", imgThresholded); //show the thresholded image
+        /*
+           for (int i = 0; i < chocolateList.size(); i++) {
+           Candy currentCandy = chocolateList.at(i); 
+           for (int j = 0; j  < detectedCandies.size(); j++) {
+           Candy candyToCheck = detectedCandies.at(j);
+
+           if (currentCandy.isSameObject(candyToCheck)) {
+           Polar newPos = candyToCheck.getCurrentPosition();
+           int newRadius = candyToCheck.getRadius();
+
+           currentCandy.updateValues(newPos, newRadius);
+           }
+           } 
+           }
+           */
+
+        imshow("Threshold Image", imgThresholded);
+        imshow("Cropped Image", croppedImage);
         imshow("Original Image", imgOriginal);
 
         if (waitKey(1) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop

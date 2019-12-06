@@ -2,6 +2,7 @@
 #include "Color.h"
 vector<Scalar> Color::colorValues = generateColorValues();
 string Color::colorNames[6] = {"green", "red", "dark blue", "yellow", "brow", "light blue"};
+
 Color::Color(int blueValue, int greenValue, int redValue) {
     blue = static_cast<double>(blueValue);
     green = static_cast<double>(greenValue);
@@ -12,6 +13,12 @@ Color::Color(double blueValue, double greenValue, double redValue) {
     blue = blueValue;
     green = greenValue;
     red = redValue;
+}
+
+Color::Color() {
+    blue = 0.0;
+    green = 0.0;
+    red = 0.0;
 }
 
 double Color::getTotalDifference(cv::Scalar color) {
@@ -47,11 +54,11 @@ string Color::getAsString() {
 
 vector<Scalar> generateColorValues() {
         vector<Scalar> colorValueList = {
-            Scalar(70, 100, 55),
+            Scalar(70, 190, 100),
             Scalar(25, 200, 160),
-            Scalar(115, 80, 35),
-            Scalar(25, 100, 100),
-            Scalar(10, 70, 50),
+            Scalar(110, 120, 85),
+            Scalar(30, 200, 185),
+            Scalar(50, 110, 100),
             Scalar(90, 170, 120)
         };
 
