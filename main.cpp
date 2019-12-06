@@ -1,8 +1,8 @@
 #include "opencv2/opencv.hpp"
-#include <sys/resource.h>
 #include <list>
-#include "helper.h"
+#include "imageStuff.h"
 #include "Candy.h"
+#include "Color.h"
 
 using namespace cv;
 using namespace std;
@@ -13,40 +13,8 @@ const Point CENTER(IMAGE_SIZE / 2 - 8, IMAGE_SIZE / 2 + 25);
 const int INNER_RADIUS = 90;
 const int OUTER_RADIUS = IMAGE_SIZE / 2;
 
-void increaseStackSize(int sizeInMb) {
-    const rlim_t kStackSize = sizeInMb * 1024 * 1024;   // min stack size = 16 MB
-    struct rlimit rl;
-    int result;
-
-    result = getrlimit(RLIMIT_STACK, &rl);
-    if (result == 0)
-    {
-        if (rl.rlim_cur < kStackSize)
-        {
-            rl.rlim_cur = kStackSize;
-            result = setrlimit(RLIMIT_STACK, &rl);
-            if (result != 0)
-            {
-                fprintf(stderr, "setrlimit returned result = %d\n", result);
-            }
-        }
-    }
-}
-
-Color getAverageColor(Mat image, Point center) {
-    Mat mask(image.size(), uchar(0));
-    circle(mask, center, 60, Scalar(255));
-    Scalar average = mean(image, mask);
-    Color averageColor(average[0], average[1], average[2]);
-    return averageColor;
-}
-
-
 int main( int argc, char** argv ) {
     list<Candy> chocolateList;
-    increaseStackSize(64);
-    auto start = high_resolution_clock::now();
-    //Mat imgOriginal = imread(argv[1]);
     VideoCapture cap(argv[1]);
 
     namedWindow("Control", WINDOW_AUTOSIZE); //create a window called "Control"
@@ -71,6 +39,7 @@ int main( int argc, char** argv ) {
 
     int frame = 0;
     while (true) {
+        auto start = high_resolution_clock::now();
         frame++;
         if (frame >= cap.get(CAP_PROP_FRAME_COUNT)) {
             frame = 1;
@@ -89,12 +58,12 @@ int main( int argc, char** argv ) {
         inRange(imgHSV, Scalar(iLowH, iLowS, iLowV), Scalar(iHighH, iHighS, iHighV), imgThresholded); //Threshold the image
 
         //morphological opening (remove small objects from the foreground)
-        erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-        dilate( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) ); 
+        erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
+        dilate( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5))); 
 
         //morphological closing (fill small holes in the foreground)
-        dilate( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) ); 
-        erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
+        dilate(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5))); 
+        erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 
         bitwise_not(imgThresholded, imgThresholded);
 
@@ -109,12 +78,18 @@ int main( int argc, char** argv ) {
         for (int i = 0; i < contours.size(); i++) {
             if (allMoments[i].m00 > 1000) {
                 Point center(allMoments[i].m10 / allMoments[i].m00, allMoments[i].m01 / allMoments[i].m00);
-                Color averageColor = getAverageColor(imgOriginal, center);
-                Colors averageColor
+                Color averageColor = getAverageColor(imgHSV, center);
+                Colors fittingColor = averageColor.getColor();
+                Scalar colorValue = Color::getColorValue(fittingColor);
+                Point topLeft = center + Point(-50, 50);
+                Point bottomRight = center + Point(50, -50);
+                rectangle(imgOriginal, topLeft, bottomRight, colorValue, 5);
+                putText(imgOriginal, Color::getColorName(fittingColor), topLeft + Point(0, 30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, Scalar(0, 0, 0));
+                putText(imgOriginal, averageColor.getAsString(), topLeft + Point(0, 50), FONT_HERSHEY_COMPLEX_SMALL, 0.8, Scalar(0, 0, 0));
             }
         }
 
-        imshow("Thresholded Image", imgThresholded); //show the thresholded image
+        //    imshow("Thresholded Image", imgThresholded); //show the thresholded image
         imshow("Original Image", imgOriginal);
 
         if (waitKey(1) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
@@ -123,11 +98,15 @@ int main( int argc, char** argv ) {
             break; 
         }
 
+        if (waitKey(1) == 32) {
+            int i;
+        }
+
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        cout << duration.count() / 1000.0 / 1000 << endl;
     }
 
     cout << Scalar(0, 1, 2)[0] << endl;
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(stop - start);
-    cout << duration.count() / 1000.0 / 1000 / 60 << endl;
     return 0;
 } 

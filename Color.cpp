@@ -1,25 +1,20 @@
 #include <cmath>
 #include "Color.h"
-
-Color::Color(int blue, int green, int red) {
-    if (!Color::initialized) {
-        vector<Color> Color::colorValues = generateColorValueList();
-        Color::initialized = true;
-    blue = blue;
-    green = green;
-    red = red;
+vector<Scalar> Color::colorValues = generateColorValues();
+string Color::colorNames[6] = {"green", "red", "dark blue", "yellow", "brow", "light blue"};
+Color::Color(int blueValue, int greenValue, int redValue) {
+    blue = static_cast<double>(blueValue);
+    green = static_cast<double>(greenValue);
+    red = static_cast<double>(redValue);
 }
 
-Color::Color(double blue, double green, double red) {
-    if (!Color::initialized) {
-        vector<Color> Color::colorValues = generateColorValueList();
-        Color::initialized = true;
-    blue = (int) blue;
-    green = (int) green;
-    red = (int) red;
+Color::Color(double blueValue, double greenValue, double redValue) {
+    blue = blueValue;
+    green = greenValue;
+    red = redValue;
 }
 
-Color::getTotalDifference(cv::Scalar color) {
+double Color::getTotalDifference(cv::Scalar color) {
     double blueDifference = abs(blue - color[0]);
     double greenDifference = abs(green - color[1]);
     double redDifference = abs(red - color[2]);
@@ -27,15 +22,46 @@ Color::getTotalDifference(cv::Scalar color) {
     return blueDifference + redDifference + greenDifference;
 }
 
-vector<Color> generateColorValueList() {
-    vector<Color> colorValues;
-    colorValues.reserve(6);
-    colorValues.addElement(Color(60, 140, 0));
-    colorValues.addElement(Color(15, 0, 230));
-    colorValues.addElement(Color(90, 30, 20));
-    colorValues.addElement(Color(250, 190, 0));
-    colorValues.addElement(Color(40, 55, 110));
-    colorValues.addElement(Color(180, 100, 0));
+Colors Color::getColor() {
+    Colors fittingColor;
+    double fittness = 3 * 400;
+    for (int i = 0; i < Color::colorValues.size(); i++) {
+        Scalar currentColor = Color::colorValues.at(i);
+        double value = Color::getTotalDifference(currentColor);
+        if (value < fittness) {
+            fittness = value;
+            fittingColor = static_cast<Colors>(i);
+        }
+    }
 
-    return colorValues;
+    return fittingColor;
+}
+
+Scalar Color::getAsScalar() {
+    return Scalar(blue, green, red);
+}
+
+string Color::getAsString() {
+    return format("[%f, %f, %f]", blue, green, red);
+}
+
+vector<Scalar> generateColorValues() {
+        vector<Scalar> colorValueList = {
+            Scalar(70, 100, 55),
+            Scalar(25, 200, 160),
+            Scalar(115, 80, 35),
+            Scalar(25, 100, 100),
+            Scalar(10, 70, 50),
+            Scalar(90, 170, 120)
+        };
+
+        return colorValueList;
+}
+
+Scalar Color::getColorValue(Colors index) {
+    return Color::colorValues.at(index);
+}
+
+string Color::getColorName(Colors index) {
+    return Color::colorNames[index];
 }

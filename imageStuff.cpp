@@ -1,4 +1,5 @@
 #include "opencv2/opencv.hpp"
+#include "imageStuff.h"
 using namespace cv;
 
 Mat circleROI(Mat image, Point center, int radius, bool inside) {
@@ -15,4 +16,11 @@ Mat circleROI(Mat image, Point center, int radius, bool inside) {
     return res;
 }
 
-
+Color getAverageColor(Mat image, Point center) {
+    int radius = 30;
+    Mat roi = image(Range(center.y - radius, center.y + radius + 1), Range(center.x - radius, center.x + radius + 1));
+    Mat1b mask(roi.rows, roi.cols);
+    Scalar average = mean(roi, mask);
+    Color averageColor(average[0], average[1], average[2]);
+    return averageColor;
+}

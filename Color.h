@@ -5,6 +5,8 @@
 #include "opencv2/opencv.hpp"
 
 using namespace std;
+using namespace cv;
+
 enum Colors {GREEN,
     RED,
     DARK_BLUE,
@@ -14,20 +16,25 @@ enum Colors {GREEN,
 
 class Color {
     private:
-        static vector<Color> colorValues;
-        static bool initialized;
-        int blue;
-        int green;
-        int red;
+        static vector<Scalar> colorValues;
+        static string colorNames[6];
+        double blue;
+        double green;
+        double red;
         Colors color;
 
+        double getTotalDifference(cv::Scalar);
     public:
-        Color(int blue, int green, int red);
-        Color(double blue, double green, double red);
+        Color(int blueValue, int greenValue, int redValue);
+        Color(double blueValue, double greenValue, double redValue);
 
+        Colors getColor();
+        Scalar getAsScalar();
+        string getAsString();
 
-        double getSquareError(cv::Scalar);
+        static Scalar getColorValue(Colors index);
+        static string getColorName(Colors index);
+
 };
-
-bool Color::initialized = false;
+vector<Scalar> generateColorValues();
 #endif
