@@ -1,25 +1,37 @@
 #ifndef CANDY_H 
 #define CANDY_H
 #include "Color.h"
-#include "Polar.h"
+#include "Coordinates.h"
+/**
+ * this class models a single piece of candy
+ */
 class Candy {
     private:
+        /** color of the candy **/
         Colors color;
-        Polar currentPosition;
-        Polar prevPosition;
+        /** current position of the candy **/
+        Coordinates currentPosition;
+        /** angular velocity of the candy **/
         double angularVelocity;
 
     public:
-        Candy(Colors color, Polar currentPosition);
+        // constructors
+        Candy(Colors iColor, Coordinates iCurrentPosition);
         Candy();
 
-        void updateValues(Polar newPosition);
-        bool isSameObject(Polar otherObject, Colors otherColor);
+        // updates the attributes
+        void updateValues(Coordinates newPosition, double stepSize);
+        
+        // checks if two candies are the same
+        bool isSameObject(Candy otherObject);
 
-        Colors getColor() { return color; }
-        Polar getCurrentPosition() { return currentPosition; }
-        Polar getPrevPosition() { return prevPosition; }
+        // getter currentPosition
+        Coordinates getCurrentPosition() { return currentPosition; }
+        // getter angularVelocity
         double getAngularVelocity() { return angularVelocity; }
+
+        // predicts the position in X frames
+        Coordinates predictPosition(int frames);
 };
 
 #endif

@@ -1,10 +1,13 @@
-#ifndef HELPER_H
-#define HELPER_H
+#ifndef IMAGE_STUFF_H
+#define IMAGE_STUFF_H
 
 #include <opencv2/opencv.hpp>
-#include "Color.h"
+#include <vector>
+#include "Candy.h"
 
+// crops circular shapes
 cv::Mat circleROI(cv::Mat image, cv::Point center, int radius, bool inside);
-Color getAverageColor(Mat image, Point center);
+// smooths image
+cv::Mat smoothImage(cv::Mat image);
 
-#endif //UNTITLED_HELPER_H
+#endif 
