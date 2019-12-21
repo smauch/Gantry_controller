@@ -35,7 +35,7 @@ bool Candy::isSameObject(Candy otherObject) {
     double dx = abs(currentPosition.getX() - otherObject.getCurrentPosition().getX());
     double dy = abs(currentPosition.getY() - otherObject.getCurrentPosition().getY());
 
-    if (dx > 20.0 || dy > 20.0) {
+    if (dx > 25.0 || dy > 25.0) {
         return false;
     }
 

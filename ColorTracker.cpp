@@ -10,16 +10,18 @@
  * @param value2 value for green or saturation
  * @param value3 value for red or value
  * @param tolerance tolerance of the tracker
- * @param size minimum size of the tracked object
+ * @param minSize minimum size of the tracked object
+ * @param maxSize maximum size of tracked object
  * @param bgr true if bgr tracker, false if hsv tracker
  */
-ColorTracker::ColorTracker(std::string name, int value1, int value2, int value3, int tolerance, int size, bool bgr) {
+ColorTracker::ColorTracker(std::string name, int value1, int value2, int value3, int tolerance, int minSize, int maxSize, bool bgr) {
     this -> name = name;
     this -> value1 = value1;
     this -> value2 = value2;
     this -> value3 = value3;
     this -> tolerance = tolerance;
-    this -> size = size;
+    this -> minSize = minSize;
+    this -> maxSize = maxSize;
     this -> bgr = bgr;
 }
 
@@ -32,7 +34,8 @@ ColorTracker::ColorTracker() {
     this -> value2 = 0;
     this -> value3 = 0;
     this -> tolerance = 0;
-    this -> size = 0;
+    this -> minSize = 0;
+    this -> maxSize = 0;
     this -> bgr = false;
 }
 
@@ -74,7 +77,8 @@ void ColorTracker::configure(cv::Mat image) {
     cv::createTrackbar("R/V", "Control", &value3, 255); //Saturation (0 - 255)
 
     cv::createTrackbar("tolerance", "Control", &tolerance, 100);
-    cv::createTrackbar("size", "Control", &size, 10000);
+    cv::createTrackbar("minSize", "Control", &minSize, 10000);
+    cv::createTrackbar("maxSize", "Control", &maxSize, 10000);
     cv::createTrackbar("hsv or bgr", "Control", &toggleBgr, 1);
 
     cv::GaussianBlur(cpyImage, cpyImage, cv::Size(5, 5), 1);
@@ -101,7 +105,7 @@ void ColorTracker::configure(cv::Mat image) {
 
         // marks all areas that would be detected by the tracker
         for (int i = 0; i < contours.size(); i++) {
-            if (allMoments[i].m00 > size) {
+            if (allMoments[i].m00 > minSize && allMoments[i].m00 < maxSize) {
                 cv::Point center(allMoments[i].m10 / allMoments[i].m00, allMoments[i].m01 / allMoments[i].m00);
                 cv::Point size(50, 50);
                 cv::rectangle(res, center - size, center + size, cv::Scalar(255, 255, 255));

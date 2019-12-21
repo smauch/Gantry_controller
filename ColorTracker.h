@@ -26,16 +26,22 @@ class ColorTracker {
         bool bgr = false;
 
         /** minimum size of a tracked object **/
-        int size = 1000;
+        int minSize = 1000;
+
+        /** maximum size of tracked object **/
+        int maxSize = 1000;
 
 
     public:
         // constructor
-        ColorTracker(std::string iName, int iValue1, int iValue2, int iValue3, int iTolerance, int size=1000, bool iBgr=true);
+        ColorTracker(std::string iName, int iValue1, int iValue2, int iValue3, int iTolerance, int minSize=1000, int maxSize=7000, bool iBgr=true);
         ColorTracker();
 
-        // getter for size
-        int getSize() { return size; }
+        // getter for minSize
+        int getMinSize() { return minSize; }
+
+        // getter for maxSize
+        int getMaxSize() { return maxSize; }
 
         // gets the colorspace specified by the tracker 
         cv::Mat getColorSpace(cv::Mat image);

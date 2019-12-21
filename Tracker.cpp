@@ -77,7 +77,7 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image) {
     }
 
     for (int i = 0; i < contours.size(); i++) {
-        if (allMoments[i].m00 > colorTrackers[color].getSize()) {
+        if (allMoments[i].m00 > colorTrackers[color].getMinSize() && allMoments[i].m00 < colorTrackers[color].getMaxSize()) {
             Coordinates center(allMoments[i].m10 / allMoments[i].m00 - centerX, allMoments[i].m01 / allMoments[i].m00 - centerY);
             Candy detectedCandy(color, center); 
             detectedCandies.push_back(detectedCandy);
@@ -134,6 +134,7 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
 
         
         /*
+        
         std::cout << i << std::endl;
                 
         currentImage = markCandyInFrame(detectedCandy, currentImage);
@@ -144,11 +145,12 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
 
         cv::circle(currentImage, predictPositionPoint, 20, cv::Scalar(255, 0, 0));
 
+        cv::imshow("asd", getTreshedImage(color, currentImage));
 
         cv::imshow("test", currentImage); 
         cv::waitKey(0);
-        */
         
+       */ 
         
 
 

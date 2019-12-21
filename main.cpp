@@ -5,7 +5,7 @@
 #include "Color.h"
 
 int main( int argc, char** argv ) {
-    cv::VideoCapture cap("/home/max/Downloads/linkit_pics/set_3/test.mp4");
+    cv::VideoCapture cap("/home/max/Downloads/linkit_pics/set_4/test.mp4");
 
     // initializing all the color trackers
     std::vector<ColorTracker> colorTrackers = {
@@ -22,7 +22,7 @@ int main( int argc, char** argv ) {
     int outerRadius = 540;
     int innerRadius = 90;
 
-    Colors color = BROWN;
+    Colors color = GREEN;
 
     cv::Mat currentImage;
     cap >> currentImage;
@@ -37,12 +37,12 @@ int main( int argc, char** argv ) {
     Candy foundCandy = tracker.getCandyOfColor(color, 60);
 
     // predict position
-    Coordinates predictedPosition = foundCandy.predictPosition(30);
+    Coordinates predictedPosition = foundCandy.predictPosition(90);
     cv::Point predictPositionPoint(predictedPosition.getX() + centerX, predictedPosition.getY() + centerY);
 
     cap >> currentImage;
 
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 90; i++) {
         cap >> currentImage;
     }
 
