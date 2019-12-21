@@ -22,7 +22,7 @@ int main( int argc, char** argv ) {
     int outerRadius = 540;
     int innerRadius = 90;
 
-    Colors color = GREEN;
+    Colors color = RED;
 
     cv::Mat currentImage;
     cap >> currentImage;

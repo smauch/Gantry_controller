@@ -133,8 +133,7 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
         }
 
         
-        /*
-        
+       /* 
         std::cout << i << std::endl;
                 
         currentImage = markCandyInFrame(detectedCandy, currentImage);
@@ -149,9 +148,7 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
 
         cv::imshow("test", currentImage); 
         cv::waitKey(0);
-        
        */ 
-        
 
 
     }
@@ -172,8 +169,10 @@ void Tracker::configure(cv::Mat image) {
     cv::createTrackbar("Center Y", "Control", &centerY, 1080);
 
     while (true) {
-
-        cv::imshow("Control picture", pipeline(cpyImage));
+        cv::Point imageCenter(centerX, centerY);
+        cv::Mat croppedImage = circleROI(cpyImage, imageCenter, 5, false);
+        croppedImage = circleROI(croppedImage, imageCenter, outerRadius, true);
+        cv::imshow("Control picture", croppedImage);
 
         if (cv::waitKey(1) == 27) {
             cv::destroyWindow("Control");

@@ -32,10 +32,17 @@ Candy::Candy() {
  * @return true if the distance between two objects is not too big
  */
 bool Candy::isSameObject(Candy otherObject) {
-    double dx = abs(currentPosition.getX() - otherObject.getCurrentPosition().getX());
-    double dy = abs(currentPosition.getY() - otherObject.getCurrentPosition().getY());
+    Coordinates predictedPosition = predictPosition(1);
+    
+    double radiusDifference = abs(otherObject.getCurrentPosition().getR() - predictedPosition.getR());
 
-    if (dx > 25.0 || dy > 25.0) {
+    double angleDifference = abs(currentPosition.calculateStep(otherObject.getCurrentPosition()));
+
+    if (radiusDifference > 50) {
+        return false;
+    }
+
+    if (angleDifference > 0.5) {
         return false;
     }
 
