@@ -1,5 +1,6 @@
 #ifndef COORDINATES_H 
 #define COORDINATES_H
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <iostream>
 
