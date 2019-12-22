@@ -3,6 +3,7 @@
 #include "ColorTracker.h"
 #include "Tracker.h"
 #include "Color.h"
+#include "Camera.h"
 // Include files to use the PYLON API.
 #include <pylon/PylonIncludes.h>
 #include <pylon/Device.h>
@@ -11,42 +12,30 @@
 #    include <pylon/PylonGUI.h>
 #endif
 
-const char Filename[] = "Config.pfs";
-
-using namespace Pylon;
-
+const char filename[] = "Config.pfs";
 
 int main( int argc, char** argv ) {
 
 	// Before using any pylon methods, the pylon runtime must be initialized. 
-	PylonInitialize();
-	CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
+    Pylon::PylonInitialize();
+
+    Camera camera();
+    camera.configure(filename);
+
+    while (true) {
+        cv::Mat currentImage = camera.grab();
+        cv::imshow("Samuel </3", currentImage);
+
+        if (cv::waitKey(1) == 27) {
+            break;
+        }
+    }
+
 
 	
-	try
-	{
-		// Create an instant camera object with the camera device found first.
-		
-		camera.Open();
-
-		// Print the model name of the camera.
-		std::cout << "Using device " << camera.GetDeviceInfo().GetModelName() << std::endl;
-
-		// Just for demonstration, read the content of the file back to the camera's node map with enabled validation.
-		CFeaturePersistence::Load(Filename, &camera.GetNodeMap(), true);
-		camera.Close();
-	}
-
-	catch (const GenericException &e)
-	{
-		// Error handling.
-		std::cerr << "An exception occurred." << std::endl
-			<< e.GetDescription() << std::endl;
-	}
-
-
+    /*
     cv::VideoCapture cap(1);
-	/*
+	
     // initializing all the color trackers
     std::vector<ColorTracker> colorTrackers = {
         ColorTracker("Green", 50, 90, 27, 47, 3000, true), 
@@ -79,7 +68,7 @@ int main( int argc, char** argv ) {
     // predict position
     Coordinates predictedPosition = foundCandy.predictPosition(90);
     cv::Point predictPositionPoint(predictedPosition.getX() + centerX, predictedPosition.getY() + centerY);
-	*/
+	
 	cv::Mat currentImage;
     cap >> currentImage;
 
@@ -97,7 +86,7 @@ int main( int argc, char** argv ) {
 
 
     // mark predicted point
-  /*  cv::circle(currentImage, predictPositionPoint, 10, cv::Scalar(255, 0, 0), 12);
+    cv::circle(currentImage, predictPositionPoint, 10, cv::Scalar(255, 0, 0), 12);
     cv::imshow("test", currentImage);
     cv::waitKey(0);
 	*/
