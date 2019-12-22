@@ -49,3 +49,25 @@ cv::Mat smoothImage(cv::Mat image) {
     
     return output;
 }
+
+cv::Mat convertPylonImageToMat(Pylon::CGrabResultPtr ptrGrabResult) {
+	Pylon::CImageFormatConverter formatConverter;
+	Pylon::CPylonImage pylonImage;
+
+	formatConverter.OutputPixelFormat = Pylon::PixelType_BGR8packed;
+	formatConverter.Convert(pylonImage, ptrGrabResult);
+
+	cv::Mat output = cv::Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC3, (uint8_t *)pylonImage.GetBuffer());
+
+	return output;
+}
+
+void printMatrix(cv::Mat matrix) {
+	for (int i = 0; i < 1080; i++) {
+		for (int j = 0; j < 1080; j++) {
+			std::cout << matrix.at<char>(i, j) << " ";
+		}
+
+		std::cout << std::endl;
+	}
+}

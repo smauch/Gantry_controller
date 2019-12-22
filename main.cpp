@@ -4,37 +4,23 @@
 #include "Tracker.h"
 #include "Color.h"
 #include "Camera.h"
-// Include files to use the PYLON API.
-#include <pylon/PylonIncludes.h>
 #include <pylon/Device.h>
-#include <pylon/PylonUtilityIncludes.h>
-#ifdef PYLON_WIN_BUILD
-#    include <pylon/PylonGUI.h>
-#endif
+// Include files to use the PYLON API.
 
-const char filename[] = "Config.pfs";
+const char filename[] = "C:/Users/hartm/source/repos/cv/Config.pfs";
 
 int main( int argc, char** argv ) {
 
 	// Before using any pylon methods, the pylon runtime must be initialized. 
-    Pylon::PylonInitialize();
+	Pylon::PylonInitialize();
 
-    Camera camera();
-    camera.configure(filename);
+	Pylon::CInstantCamera baslerCamera(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
+	baslerCamera.Open();
+	Pylon::CFeaturePersistence::Load(filename, &(baslerCamera.GetNodeMap()), true);
 
-    while (true) {
-        cv::Mat currentImage = camera.grab();
-        cv::imshow("Samuel </3", currentImage);
-
-        if (cv::waitKey(1) == 27) {
-            break;
-        }
-    }
+	Camera camera(&baslerCamera);
 
 
-	
-    /*
-    cv::VideoCapture cap(1);
 	
     // initializing all the color trackers
     std::vector<ColorTracker> colorTrackers = {
@@ -53,42 +39,53 @@ int main( int argc, char** argv ) {
 
     Colors color = RED;
 
-    cv::Mat currentImage;
-    cap >> currentImage;
+    cv::Mat currentImage = camera.grab(true);
 
+	
     // adjust the values of the tracker
     colorTrackers[color].configure(currentImage);
 
-    Tracker tracker(centerX, centerY, outerRadius, innerRadius, cap, colorTrackers);
+    Tracker tracker(centerX, centerY, outerRadius, innerRadius, &baslerCamera, colorTrackers);
+
+
     tracker.configure(currentImage); // configure tracker
 
-    // get chocolate
-    Candy foundCandy = tracker.getCandyOfColor(color, 60);
+	//camera.getCamera()->StartGrabbing(20000);
 
-    // predict position
-    Coordinates predictedPosition = foundCandy.predictPosition(90);
-    cv::Point predictPositionPoint(predictedPosition.getX() + centerX, predictedPosition.getY() + centerY);
-	
-	cv::Mat currentImage;
-    cap >> currentImage;
+	while (true) {
+		cv::Mat maImage = camera.grab(true);
+		std::vector<Candy> detectedCandies = tracker.getCandiesInFrame(color, maImage);
 
-    for (int i = 0; i < 90; i--) {
-        cap >> currentImage;
-		cv::imshow("Martin <3", currentImage);
+		for (int i = 0; i < detectedCandies.size(); i++) {
+			maImage = tracker.markCandyInFrame(detectedCandies[i], maImage);
+		}
 
-		std::cout << currentImage.size() << std::endl;
+		//std::cout << maImage.at<uchar>(20, 20) << std::endl;
 
-		if (cv::waitKey(5) == 27) {
+		cv::imshow("Samuel <3", maImage);
+		
+		if (cv::waitKey(1) == 27) {
 			break;
 		}
-    }
 
+
+	}
+
+
+
+    // get chocolate
+    // Candy foundCandy = tracker.getCandyOfColor(color, 20);
+
+    // predict position
+  //  Coordinates predictedPosition = foundCandy.predictPosition(90);
+ //   cv::Point predictPositionPoint(predictedPosition.getX() + centerX, predictedPosition.getY() + centerY);
 
 
     // mark predicted point
-    cv::circle(currentImage, predictPositionPoint, 10, cv::Scalar(255, 0, 0), 12);
-    cv::imshow("test", currentImage);
-    cv::waitKey(0);
-	*/
+   // cv::circle(currentImage, predictPositionPoint, 10, cv::Scalar(255, 0, 0), 12);
+   // cv::imshow("test", currentImage);
+   // cv::waitKey(0);
+	
+	baslerCamera.Close();
     return 0;
 } 

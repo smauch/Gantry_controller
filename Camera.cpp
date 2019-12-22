@@ -1,40 +1,37 @@
 #include "Camera.h"
 
 Camera::Camera() {
-    Pylon::CInstantCamera camera( Pylon::CTlFactory::GetInstance().CreateFirstDevice());
-    this -> camera  = camera;
+	this->camera = NULL;
 }
 
-void Camera::configure(std::string filename) {
-    camera.Open();
-    Pylon::CFeaturePersistence::Load(filename, &camera.GetNodeMap(), true);
-    camera.maxNumBuffer = 5;
-    camera.Close();
+Camera::Camera(Pylon::CInstantCamera *camera) {
+	this->camera = (Pylon::CInstantCamera *) malloc(sizeof(Pylon::CInstantCamera));
+	this->camera = camera;
 }
 
-cv::Mat Camera::grab() {
-    camera.Open();
-    camera.StartGrabbing(1); // only need one picture
-    Pylon::CGrabResultPtr ptrGrabResult;
+void Camera::configure(const char filename[]) {
+    camera->Open();
+    Pylon::CFeaturePersistence::Load(filename, &(camera->GetNodeMap()), true);
+    camera->Close();
+}
 
-    camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
-    cv::Mat output; 
+cv::Mat Camera::grab(bool singleFrame) {
+	Pylon::CGrabResultPtr ptrGrabResult;
+
+	if (singleFrame) {
+		camera->StartGrabbing(1);
+	}
+
+    camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
+		
+	cv::Mat output;
     if (ptrGrabResult -> GrabSucceeded()) {
-        output = convertPylonImageToMat(ptrGrabResult);
-    }
-
-    return output;
-}
-
-cv::Mat Camera::convertPylonImageToMat(Pylon::CGrabResultPtr ptrGrabResult) {
-    Pylon::CImageFormatConverter formatConverter;
-    cv::Mat output;
-    Pylon::CPylonImage pylonImage;
-
-    formatConverter.OutputPixelFormat = Pylon::PixelType__BGR8packed;
-    formatConverter.Convert(pylonImage, ptrGrabResult);
-
-    output = cv::Mat(ptrGrabResult -> GetHeight(), ptrGrabResult -> GetWidth(), cv::CV_8U, (uint8_t *) pylonImage.GetBuffer());
+		Pylon::CImageFormatConverter formatConverter;
+		Pylon::CPylonImage pylonImage;
+		formatConverter.OutputPixelFormat = Pylon::EPixelType::PixelType_BGR8packed;
+		formatConverter.Convert(pylonImage, ptrGrabResult);
+		output = cv::Mat(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC3, (uint8_t *)pylonImage.GetBuffer()).clone();
+	}
 
     return output;
 }
