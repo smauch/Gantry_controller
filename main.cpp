@@ -9,12 +9,12 @@ int main( int argc, char** argv ) {
 
     // initializing all the color trackers
     std::vector<ColorTracker> colorTrackers = {
-        ColorTracker("Green", 50, 90, 27, 47, 3000, true), 
-        ColorTracker("Red", 0, 0, 200, 100, 3000, true), 
-        ColorTracker("Dark Blue", 140, 120, 96, 60, 4000, false), 
-        ColorTracker("Yellow", 0, 150, 185, 77, 5000, true), 
-        ColorTracker("Brown", 47, 99, 88, 65, 4000, true), 
-        ColorTracker("Light Blue", 116, 223, 135, 44, 3000, false), 
+        ColorTracker("Green", 50, 90, 27, 47, 3000, 7000, true),
+        ColorTracker("Red", 0, 0, 200, 100, 3000, 7000, true),
+        ColorTracker("Dark Blue", 140, 120, 96, 60, 4000, 7000, false),
+        ColorTracker("Yellow", 0, 150, 185, 77, 5000, 7000, true),
+        ColorTracker("Brown", 47, 99, 88, 65, 4000, 7000, true),
+        ColorTracker("Light Blue", 116, 223, 135, 44, 3000, 7000, false),
     };
 
     int centerX = 546;
