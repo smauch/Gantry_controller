@@ -2,6 +2,7 @@
 #define COLOR_TRACKER_H
 
 #include "opencv2/opencv.hpp"
+#include "json11.hpp"
 #include <string>
 
 /**
@@ -47,5 +48,7 @@ class ColorTracker {
         cv::Mat getColorSpace(cv::Mat image);
         // lets the user configure the tracker
         void configure(cv::Mat image);
+        // converts the class to a json object
+        json11::Json to_json() const;
 };
 #endif

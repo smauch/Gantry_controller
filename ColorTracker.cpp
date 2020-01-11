@@ -127,4 +127,20 @@ void ColorTracker::configure(cv::Mat image) {
             break;
         }
     }
+
+}
+
+json11::Json ColorTracker::to_json() const {
+    json11::Json outputJson = json11::Json::object {
+        { "name", this->name },
+            { "value1", this->value1},
+            { "value2", this->value2},
+            { "value3", this->value3},
+            { "tolerance", this->tolerance},
+            { "bgr", this->bgr},
+            { "minSize", this->minSize},
+            { "maxSize", this->maxSize},
+    };
+
+    return outputJson;
 }
