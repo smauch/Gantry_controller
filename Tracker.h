@@ -3,9 +3,15 @@
 
 #include <vector>
 #include "opencv2/opencv.hpp"
+#include <pylon/PylonIncludes.h>
+#include <pylon/PylonUtilityIncludes.h>
+#ifdef PYLON_WIN_BUILD
+#    include <pylon/PylonGUI.h>
+#endif
 #include "Candy.h"
 #include "ColorTracker.h"
 #include "Coordinates.h"
+#include "Camera.h"
 
 /**
  * class for tracking candies
@@ -21,7 +27,7 @@ class Tracker {
         /** radius of the mounting thingy **/
         int innerRadius = 90;
         /** source of video **/
-        cv::VideoCapture cap;
+		Camera camera;
         /** the color trackers for the candies **/
         std::vector<ColorTracker> colorTrackers;
 
@@ -32,7 +38,7 @@ class Tracker {
 
     public:
         // constructor
-        Tracker(int iCenterX, int iCenterY, int iOuterRadius, int iInnerRadius, cv::VideoCapture iCap, std::vector<ColorTracker> iColorTrackers);
+        Tracker(int iCenterX, int iCenterY, int iOuterRadius, int iInnerRadius, Camera camera, std::vector<ColorTracker> iColorTrackers);
         // tracks all candies of the given color in the frame
         std::vector<Candy> getCandiesInFrame(Colors color, cv::Mat image);
         // marks the given candy in the given frame

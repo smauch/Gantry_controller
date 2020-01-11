@@ -12,12 +12,12 @@
  * @param cap the source of the video
  * @param colorTracker a vector of all available colors
  */
-Tracker::Tracker(int centerX, int centerY, int outerRadius, int innerRadius, cv::VideoCapture cap, std::vector<ColorTracker> colorTrackers) {
+Tracker::Tracker(int centerX, int centerY, int outerRadius, int innerRadius, Camera camera, std::vector<ColorTracker> colorTrackers) {
     this -> centerX = centerX;
     this -> centerY = centerY;
     this -> outerRadius = outerRadius;
     this -> innerRadius = innerRadius;
-    this -> cap = cap;
+    this -> camera = camera;
     this -> colorTrackers = colorTrackers;
 }
 
@@ -117,14 +117,15 @@ cv::Mat Tracker::markCandyInFrame(Candy candy, cv::Mat image) {
  * @return candy object with adjusted angular velocity
  */
 Candy Tracker::getCandyOfColor(Colors color, int frames) {
-    cv::Mat currentImage;
-    cv::Mat initialFrame;
-    cap.read(initialFrame);
-    Candy detectedCandy = getCandiesInFrame(color, initialFrame).front();
-    for (int i = 0; i < frames; i++) {
-        cap >> currentImage;
-        std::vector<Candy> currentFrameDetectedCandies = getCandiesInFrame(color, currentImage);
+	camera.getCamera()->StartGrabbing(frames + 1);
 
+	cv::Mat initialFrame = camera.grab();
+
+    Candy detectedCandy = getCandiesInFrame(color, initialFrame).front();
+    while (camera.getCamera()->IsGrabbing()) {
+		cv::Mat currentImage = camera.grab();
+        std::vector<Candy> currentFrameDetectedCandies = getCandiesInFrame(color, currentImage);
+		
         for (int k = 0; k < currentFrameDetectedCandies.size(); k++) {
             if (detectedCandy.isSameObject(currentFrameDetectedCandies[k])) {
                 detectedCandy.updateValues(currentFrameDetectedCandies[k].getCurrentPosition(), 1.0 / frames);
@@ -133,22 +134,19 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
         }
 
         
-       /* 
-        std::cout << i << std::endl;
-                
-        currentImage = markCandyInFrame(detectedCandy, currentImage);
-
+          
+       // currentImage = markCandyInFrame(detectedCandy, currentImage);
+		/*
         Coordinates predictedPosition = detectedCandy.predictPosition(10);
 
         cv::Point predictPositionPoint(predictedPosition.getX() + centerX, predictedPosition.getY() + centerY);
 
         cv::circle(currentImage, predictPositionPoint, 20, cv::Scalar(255, 0, 0));
+		*/
+      //  cv::imshow("asd", getTreshedImage(color, currentImage));
+		//cv::waitKey(0);
+        //cv::imshow("asd", currentImage); 
 
-        cv::imshow("asd", getTreshedImage(color, currentImage));
-
-        cv::imshow("test", currentImage); 
-        cv::waitKey(0);
-       */ 
 
 
     }
