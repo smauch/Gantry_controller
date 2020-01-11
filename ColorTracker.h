@@ -37,6 +37,7 @@ class ColorTracker {
         // constructor
         ColorTracker(std::string iName, int iValue1, int iValue2, int iValue3, int iTolerance, int minSize=1000, int maxSize=7000, bool iBgr=true);
         ColorTracker();
+        ColorTracker(json11::Json json);
 
         // getter for minSize
         int getMinSize() { return minSize; }
@@ -50,5 +51,7 @@ class ColorTracker {
         void configure(cv::Mat image);
         // converts the class to a json object
         json11::Json to_json() const;
+
+        static std::vector<ColorTracker> getColorTrackersFromJson(std::string filepath);
 };
 #endif

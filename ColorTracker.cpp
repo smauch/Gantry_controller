@@ -1,4 +1,5 @@
 #include <string>
+#include <fstream>
 #include "ColorTracker.h"
 #include "imageStuff.h"
 
@@ -15,28 +16,58 @@
  * @param bgr true if bgr tracker, false if hsv tracker
  */
 ColorTracker::ColorTracker(std::string name, int value1, int value2, int value3, int tolerance, int minSize, int maxSize, bool bgr) {
-    this -> name = name;
-    this -> value1 = value1;
-    this -> value2 = value2;
-    this -> value3 = value3;
-    this -> tolerance = tolerance;
-    this -> minSize = minSize;
-    this -> maxSize = maxSize;
-    this -> bgr = bgr;
+    this->name = name;
+    this->value1 = value1;
+    this->value2 = value2;
+    this->value3 = value3;
+    this->tolerance = tolerance;
+    this->minSize = minSize;
+    this->maxSize = maxSize;
+    this->bgr = bgr;
 }
 
 /**
  * default constructor of color tracker
  */
 ColorTracker::ColorTracker() {
-    this -> name = "initialize me";
-    this -> value1 = 0;
-    this -> value2 = 0;
-    this -> value3 = 0;
-    this -> tolerance = 0;
-    this -> minSize = 0;
-    this -> maxSize = 0;
-    this -> bgr = false;
+    this->name = "initialize me";
+    this->value1 = 0;
+    this->value2 = 0;
+    this->value3 = 0;
+    this->tolerance = 0;
+    this->minSize = 0;
+    this->maxSize = 0;
+    this->bgr = false;
+}
+
+ColorTracker::ColorTracker(json11::Json json) {
+    this->name = json["name"].string_value();
+    this->value1 = json["value1"].int_value();
+    this->value2 = json["value2"].int_value();
+    this->value3 = json["value3"].int_value();
+    this->tolerance = json["tolerance"].int_value();
+    this->minSize = json["minSize"].int_value();
+    this->maxSize = json["maxSize"].int_value();
+    this->bgr = json["bgr"].bool_value();
+}
+
+std::vector<ColorTracker> ColorTracker::getColorTrackersFromJson(std::string filepath) {
+    std::string line;
+    std::ifstream jsonfile(filepath);
+    if (jsonfile.is_open()) {
+        std::getline(jsonfile, line);
+    }
+    jsonfile.close();
+    std::string err;
+    std::vector<json11::Json> jsonVector = json11::Json::parse_multi(line, err);
+    std::vector<ColorTracker> colorTrackers;
+
+    for (int i = 0; i < jsonVector.size(); i++) {
+        std::cout << jsonVector[i].dump() << std::endl;
+        colorTrackers.push_back(ColorTracker(jsonVector[i]));
+    }
+
+    return colorTrackers;
 }
 
 /**
