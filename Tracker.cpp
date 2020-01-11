@@ -117,13 +117,16 @@ cv::Mat Tracker::markCandyInFrame(Candy candy, cv::Mat image) {
  * @return candy object with adjusted angular velocity
  */
 Candy Tracker::getCandyOfColor(Colors color, int frames) {
-	camera.getCamera()->StartGrabbing(frames + 1);
 
-	cv::Mat initialFrame = camera.grab();
+	cv::Mat initialFrame = camera.grab(true);
 
-    Candy detectedCandy = getCandiesInFrame(color, initialFrame).front();
-    while (camera.getCamera()->IsGrabbing()) {
-		cv::Mat currentImage = camera.grab();
+    std::vector<Candy> detectedCandies = getCandiesInFrame(color, initialFrame);
+    if (detectedCandies.size() == 0) {
+        return NULL;
+    }
+    Candy detectedCandy = detectedCandies.front();
+    for (int i = 0; i < frames; i++) {
+		cv::Mat currentImage = camera.grab(true);
         std::vector<Candy> currentFrameDetectedCandies = getCandiesInFrame(color, currentImage);
 		
         for (int k = 0; k < currentFrameDetectedCandies.size(); k++) {
