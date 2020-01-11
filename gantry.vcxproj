@@ -183,45 +183,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="dependencies\c\Amp.cpp" />
-    <ClCompile Include="dependencies\c\AmpFile.cpp" />
-    <ClCompile Include="dependencies\c\AmpFW.cpp" />
-    <ClCompile Include="dependencies\c\AmpParam.cpp" />
-    <ClCompile Include="dependencies\c\AmpPDO.cpp" />
-    <ClCompile Include="dependencies\c\AmpPVT.cpp" />
-    <ClCompile Include="dependencies\c\AmpStruct.cpp" />
-    <ClCompile Include="dependencies\c\AmpUnits.cpp" />
-    <ClCompile Include="dependencies\c\AmpVersion.cpp" />
-    <ClCompile Include="dependencies\c\Can.cpp" />
-    <ClCompile Include="dependencies\c\CanOpen.cpp" />
-    <ClCompile Include="dependencies\c\can\can_copley.cpp" />
-    <ClCompile Include="dependencies\c\can\can_ixxat_v3.cpp" />
-    <ClCompile Include="dependencies\c\CML.cpp" />
-    <ClCompile Include="dependencies\c\CopleyIO.cpp" />
-    <ClCompile Include="dependencies\c\CopleyIOFile.cpp" />
-    <ClCompile Include="dependencies\c\CopleyNode.cpp" />
-    <ClCompile Include="dependencies\c\ecatdc.cpp" />
-    <ClCompile Include="dependencies\c\Error.cpp" />
-    <ClCompile Include="dependencies\c\EtherCAT.cpp" />
-    <ClCompile Include="dependencies\c\EventMap.cpp" />
-    <ClCompile Include="dependencies\c\File.cpp" />
-    <ClCompile Include="dependencies\c\Filter.cpp" />
-    <ClCompile Include="dependencies\c\Firmware.cpp" />
-    <ClCompile Include="dependencies\c\Geometry.cpp" />
-    <ClCompile Include="dependencies\c\InputShaper.cpp" />
-    <ClCompile Include="dependencies\c\IOmodule.cpp" />
-    <ClCompile Include="dependencies\c\Linkage.cpp" />
-    <ClCompile Include="dependencies\c\LSS.cpp" />
-    <ClCompile Include="dependencies\c\Network.cpp" />
-    <ClCompile Include="dependencies\c\Node.cpp" />
-    <ClCompile Include="dependencies\c\Path.cpp" />
-    <ClCompile Include="dependencies\c\PDO.cpp" />
-    <ClCompile Include="dependencies\c\Reference.cpp" />
-    <ClCompile Include="dependencies\c\SDO.cpp" />
-    <ClCompile Include="dependencies\c\Threads.cpp" />
-    <ClCompile Include="dependencies\c\threads\Threads_w32.cpp" />
-    <ClCompile Include="dependencies\c\TrjScurve.cpp" />
-    <ClCompile Include="dependencies\c\Utils.cpp" />
     <ClCompile Include="Gantry.cpp" />
     <ClCompile Include="GantryTrajectory.cpp" />
     <ClCompile Include="main.cpp" />
