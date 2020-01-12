@@ -103,13 +103,13 @@ void ColorTracker::configure(cv::Mat image) {
     int toggleBgr = bgr;
 
 
-    cv::createTrackbar("B/H", "Control", &(this->value1), 255); //Hue (0 - 179)
-    cv::createTrackbar("G/S", "Control", &(this->value2), 255);
-    cv::createTrackbar("R/V", "Control", &(this->value3), 255); //Saturation (0 - 255)
+    cv::createTrackbar("B/H", "Control", &value1, 255); //Hue (0 - 179)
+    cv::createTrackbar("G/S", "Control", &value2, 255);
+    cv::createTrackbar("R/V", "Control", &value3, 255); //Saturation (0 - 255)
 
-    cv::createTrackbar("tolerance", "Control", &(this->tolerance), 100);
-    cv::createTrackbar("minSize", "Control", &(this->minSize), 10000);
-    cv::createTrackbar("maxSize", "Control", &(this->maxSize), 10000);
+    cv::createTrackbar("tolerance", "Control", &tolerance, 100);
+    cv::createTrackbar("minSize", "Control", &minSize, 10000);
+    cv::createTrackbar("maxSize", "Control", &maxSize, 10000);
     cv::createTrackbar("hsv or bgr", "Control", &toggleBgr, 1);
 
     cv::GaussianBlur(cpyImage, cpyImage, cv::Size(5, 5), 1);
@@ -172,6 +172,5 @@ json11::Json ColorTracker::to_json() const {
             { "minSize", this->minSize},
             { "maxSize", this->maxSize},
     };
-    std::string json_str = outputJson.dump();
-    return json_str;
+    return outputJson;
 }
