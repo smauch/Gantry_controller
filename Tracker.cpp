@@ -122,7 +122,7 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
 
     std::vector<Candy> detectedCandies = getCandiesInFrame(color, initialFrame);
     if (detectedCandies.size() == 0) {
-        return NULL;
+        throw NoCandyException;
     }
     Candy detectedCandy = detectedCandies.front();
     for (int i = 0; i < frames; i++) {

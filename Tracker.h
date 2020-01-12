@@ -12,6 +12,13 @@
 #include "ColorTracker.h"
 #include "Coordinates.h"
 #include "Camera.h"
+#include <exception>
+
+struct NoCandyException : public std::exception {
+    const char* what() const throw() {
+        return "There are no Candies";
+    }
+};
 
 /**
  * class for tracking candies
