@@ -59,12 +59,12 @@ std::vector<ColorTracker> ColorTracker::getColorTrackersFromJson(std::string fil
     }
     jsonfile.close();
     std::string err;
-    std::vector<json11::Json> jsonVector = json11::Json::parse_multi(line, err);
+    json11::Json json = json11::Json::parse(line, err);
     std::vector<ColorTracker> colorTrackers;
 
-    for (int i = 0; i < jsonVector.size(); i++) {
-        std::cout << jsonVector[i].dump() << std::endl;
-        colorTrackers.push_back(ColorTracker(jsonVector[i]));
+    for (json11::Json singleItem : json.array_items()) {
+        std::cout << singleItem.dump() << std::endl;
+        colorTrackers.push_back(ColorTracker(singleItem));
     }
 
     return colorTrackers;
