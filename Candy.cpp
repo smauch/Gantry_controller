@@ -70,7 +70,7 @@ Coordinates Candy::predictPosition(int frames) {
  * @param newPosition new position of the candy
  * @param stepSize by how many units should the angularVelocity be adjusted
  */
-void Candy::updateValues(Coordinates newPosition, double stepSize) {
-    this -> angularVelocity += currentPosition.calculateStep(newPosition) * stepSize;
+void Candy::updateValues(Coordinates newPosition, int neededTime, double stepSize) {
+    this -> angularVelocity += (currentPosition.calculateStep(newPosition) / static_cast<double>(neededTime)) * stepSize;
     this -> currentPosition = newPosition;
 }

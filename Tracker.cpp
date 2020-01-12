@@ -1,4 +1,5 @@
 #include <vector>
+#include <chrono>
 #include "Tracker.h"
 #include "imageStuff.h"
 
@@ -127,11 +128,14 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
     Candy detectedCandy = detectedCandies.front();
     for (int i = 0; i < frames; i++) {
 		cv::Mat currentImage = camera.grab(true);
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         std::vector<Candy> currentFrameDetectedCandies = getCandiesInFrame(color, currentImage);
 		
         for (int k = 0; k < currentFrameDetectedCandies.size(); k++) {
             if (detectedCandy.isSameObject(currentFrameDetectedCandies[k])) {
-                detectedCandy.updateValues(currentFrameDetectedCandies[k].getCurrentPosition(), 1.0 / frames);
+                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+                int neededTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+                detectedCandy.updateValues(currentFrameDetectedCandies[k].getCurrentPosition(), neededTime, 1 / frames);
                 break;
             }
         }
