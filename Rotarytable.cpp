@@ -21,6 +21,8 @@ extern "C"
 #include "CopError.h"
 #include "copcmd.h"
 #include "Cop.h"
+#include <math.h>
+#define _USE_MATH_DEFINES
 
 #include "rotarytable.h"
 
@@ -187,6 +189,17 @@ void RotaryTable::UpdateVelocity(BOOL upvelocity) {
 	//Writing the corresponding velocity
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, sizeof(m_vel), (PBYTE)&m_vel, &m_abortcode);
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
+}
+
+double RotaryTable::getAngVelocity()
+{
+	//DWORD *len;
+	//BYTE m_vel;
+	DWORD len;
+	m_abortcode = 0;
+	COP_ReadSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, &len, (PBYTE)&m_vel, &m_abortcode);
+	double tableAngVel = (((m_vel / 36.0) * 2 * M_PI) / 60.0);
+	return tableAngVel;
 }
 
 RotaryTable::~RotaryTable(){
