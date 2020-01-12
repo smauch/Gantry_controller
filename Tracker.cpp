@@ -106,6 +106,7 @@ cv::Mat Tracker::markCandyInFrame(Candy candy, cv::Mat image) {
     cv::Point size(50, 50);
 
     cv::rectangle(image, kartCor - size, kartCor + size, cv::Scalar(0, 0, 255), 10);
+    cv::putText(image, std::to_string(candy.getAngularVelocity()), kartCor - cv::Point(60, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 3, 8);
     return image;
 }
 
@@ -135,11 +136,13 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
             if (detectedCandy.isSameObject(currentFrameDetectedCandies[k])) {
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
                 int neededTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-                detectedCandy.updateValues(currentFrameDetectedCandies[k].getCurrentPosition(), neededTime, 1 / frames);
+                detectedCandy.updateValues(currentFrameDetectedCandies[k].getCurrentPosition(), neededTime, 1.0 / frames);
                 break;
             }
         }
 
+        //cv::imshow("test", markCandyInFrame(detectedCandy, currentImage));
+        //cv::waitKey(2);
         
           
        // currentImage = markCandyInFrame(detectedCandy, currentImage);

@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include "Candy.h"
+#define _USE_MATH_DEFINES
 
 /**
  * constructor of the candy class
@@ -56,7 +57,7 @@ bool Candy::isSameObject(Candy otherObject) {
  * @return the predicited position of the candy
  */
 Coordinates Candy::predictPosition(int frames) {
-    float predictedAngle = currentPosition.getAngle() + (angularVelocity * frames);
+    float predictedAngle = currentPosition.getAngle() + (angularVelocity / 1000 * frames);
     float radius = currentPosition.getR();
     Coordinates output;
     output.fromPolar(radius, predictedAngle);
@@ -71,6 +72,8 @@ Coordinates Candy::predictPosition(int frames) {
  * @param stepSize by how many units should the angularVelocity be adjusted
  */
 void Candy::updateValues(Coordinates newPosition, int neededTime, double stepSize) {
-    this -> angularVelocity += (currentPosition.calculateStep(newPosition) / static_cast<double>(neededTime)) * stepSize;
-    this -> currentPosition = newPosition;
+    double step = ((currentPosition.calculateStep(newPosition) * 1000) / static_cast<double>(neededTime)) * stepSize;
+
+    this->angularVelocity += step / M_PI; // because circle, trust me
+    this->currentPosition = newPosition;
 }

@@ -99,10 +99,9 @@ cv::Mat ColorTracker::getColorSpace(cv::Mat image) {
 void ColorTracker::configure(cv::Mat image) {
     cv::Mat cpyImage = image.clone();
     cv::namedWindow("Control", cv::WINDOW_AUTOSIZE);
-   // cv::imshow("Control", cpyImage);
-   // cv::waitKey(0);
+
     int toggleBgr = bgr;
-    std::cout << &(this->value1) << std::endl;
+
 
     cv::createTrackbar("B/H", "Control", &(this->value1), 255); //Hue (0 - 179)
     cv::createTrackbar("G/S", "Control", &(this->value2), 255);
