@@ -183,10 +183,10 @@ void RotaryTable::UpdateVelocity(BOOL upvelocity) {
 
 	m_vel = upvelocity;
 	m_abortcode = 0;
-	m_mode_motor = 0x05;
+	m_mode_motor = 0x74;
 	//Writing the corresponding velocity
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, sizeof(m_vel), (PBYTE)&m_vel, &m_abortcode);
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 1, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
+	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
 }
 
 RotaryTable::~RotaryTable(){
