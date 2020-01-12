@@ -75,8 +75,6 @@ bool Gantry::getCatched()
 
 bool Gantry::initGantry()
 {	
-	// It's handy for debugging, but not necessary for a production system.
-	//cml.SetDebugLevel(LOG_EVERYTHING);
 	// Open the low level CAN port that will be used to communicate to the amplifiers.
 	err = can.Open();
 	showerr(err, "Opening CAN port");
@@ -139,19 +137,32 @@ bool Gantry::initGantry()
 
 bool Gantry::catchCandy(double angularVel, double angular, double radius)
 {
+	//Time measurement to catch
+	auto start_move = std::chrono::high_resolution_clock::now();
 	this->calcMovement(angularVel, angular, radius);
+	auto stop_clac = std::chrono::high_resolution_clock::now();
+	this->setValve(false);
+	this->setPump(true);
 	err = this->link.MoveTo(pos);
 	showerr(err, "Starting move");
 	err = this->link.WaitMoveDone(20000);
-	this->setValve(false);
-	this->setPump(true);
-	pos[2] = CATCH_Z_HEIGHT;
+	
+	/*pos[2] = CATCH_Z_HEIGHT;
 	err = this->link.MoveTo(pos);
-	err = this->link.WaitMoveDone(20000);
+	err = this->link.WaitMoveDone(20000);*/
+
+	auto stop_move= std::chrono::high_resolution_clock::now();
 	pos[2] = pos[2] - 10000;
 	err = this->link.MoveTo(pos);
 	showerr(err, "Starting move");
 	err = this->link.WaitMoveDone(20000);
+	auto duration_calc = std::chrono::duration_cast<std::chrono::milliseconds>(stop_clac - start_move);
+	auto duration_move = std::chrono::duration_cast<std::chrono::milliseconds>(stop_move - stop_clac);
+	// To get the value of duration use the count() 
+	// member function on the duration object 
+	
+	//std::cout << "Calculation lasts" << duration_calc.count() << " microsenconds" << std::endl;
+	//std::cout << "Movement lasts " << duration_move.count() << " microsenconds" << std::endl;
 	if (getCatched())
 	{
 		//driveback
@@ -271,7 +282,8 @@ void Gantry::calcMovement(double angularVelOffset, double angularOffset, double 
 
 	pos[0] = radius * sin(angularOffset) + DISC_CENTER_POS[0];
 	pos[1] = radius * -cos(angularOffset) + DISC_CENTER_POS[1];
-	pos[2] = 24000;
+	pos[2] = CATCH_Z_HEIGHT;
+	//pos[2] = 24000;
 
 	//double t = 0.01;
 	//double angularVelMax = PI / 4;
