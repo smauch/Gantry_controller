@@ -34,7 +34,7 @@ public:
 	/*Functions to start and stop the movement the movement*/
 	void StartMovement(void);
 	void StopMovement(void);
-
+	void UpdateVelocity(BOOL upvelocity);
 private:
 
 //every m_res variable stores information about a possible error of the corresponding step
