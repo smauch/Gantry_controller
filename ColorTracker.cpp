@@ -63,7 +63,6 @@ std::vector<ColorTracker> ColorTracker::getColorTrackersFromJson(std::string fil
     std::vector<ColorTracker> colorTrackers;
 
     for (json11::Json singleItem : json.array_items()) {
-        std::cout << singleItem.dump() << std::endl;
         colorTrackers.push_back(ColorTracker(singleItem));
     }
 
