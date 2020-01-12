@@ -20,7 +20,7 @@ class Candy {
         Candy();
 
         // updates the attributes
-        void updateValues(Coordinates newPosition, double stepSize);
+        void updateValues(Coordinates newPosition, int neededTime, double stepSize);
         
         // checks if two candies are the same
         bool isSameObject(Candy otherObject);
