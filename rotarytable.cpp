@@ -16,7 +16,6 @@ extern "C"
 
 #include "vciguid.h"
 #include "XatBrds.h"
-#include "stdafx.h"
 #include "objbase.h"
 #include "initguid.h"
 #include "CopError.h"

@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Quelle.cpp">
+    <ClCompile Include="rotarytable.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="rotarytable.cpp">
+    <ClCompile Include="Main.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

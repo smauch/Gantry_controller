@@ -19,7 +19,7 @@ extern "C"
 
 //Needed for type def
 #include "objbase.h"
-#include "Cop.h"
+#include <Cop.h>
 
 class RotaryTable
 {
