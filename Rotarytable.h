@@ -109,7 +109,7 @@ BOOL m_vel_dec_dt;
 
 
 
-//BOOL RotaryTable::GetPos() { return m_currentpos; }
+//BOOL RotaryTable::GetPos() { return m_currentpos;}
 
 
 
