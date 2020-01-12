@@ -12,6 +12,21 @@ static void showerr(const Error* err, const char* msg) {
 	exit(1);
 };
 
+Gantry::Gantry()
+{
+
+}
+
+Gantry::~Gantry()
+{
+
+	ptpMove(HOME_POS);
+	for (int i = 0; i < NUM_AMP; i++)
+	{
+		err = this->link[i].Disable(true);
+		showerr(err, "Disable Amplifiers");
+	}
+}
 
 
 bool Gantry::setPump(bool state)
@@ -55,21 +70,7 @@ bool Gantry::getCatched()
 	}
 }
 
-Gantry::Gantry()
-{
-	
-}
 
-Gantry::~Gantry()
-{
-
-	ptpMove(homePos);
-	for (int i = 0; i < numAmp; i++)
-	{
-		err = this->link[i].Disable(true);
-		showerr(err, "Disable Amplifiers");
-	}
-}
 	
 
 bool Gantry::initGantry()
@@ -83,7 +84,7 @@ bool Gantry::initGantry()
 	err = this->canOpen.Open(can);
 	showerr(err, "Opening CANopen network");
 	// Initialize the amplifier
-	for (short i = 0; i < numAmp; i++)
+	for (short i = 0; i < NUM_AMP; i++)
 	{
 		err = this->amp[i].Init(canOpen, CAN_AXIS[i]);
 		showerr(err, "Initting Axis amplifier");
@@ -91,7 +92,7 @@ bool Gantry::initGantry()
 	//Load the amplifier settings from CME2 config
 
 
-	for (short i = 0; i < numAmp; i++)
+	for (short i = 0; i < NUM_AMP; i++)
 	{
 		int line;
 		if (std::filesystem::exists(ampConfigPath[i].c_str())) {
@@ -104,7 +105,7 @@ bool Gantry::initGantry()
 		showerr(err, "Loading from file\n");
 	}
 	//Initalize linkit object
-	err = this->link.Init(numAmp, amp);
+	err = this->link.Init(NUM_AMP, amp);
 	showerr(err, "Linkage init");
 	printf("Finished initting amps and linkage.\n");
 	if (homeAxis() == false) {
@@ -116,7 +117,7 @@ bool Gantry::initGantry()
 	linkCfg.haltOnVelWin = true;
 	link.Configure(linkCfg);
 	//Halt modes
-	for (short i = 0; i < numAmp; i++)
+	for (short i = 0; i < NUM_AMP; i++)
 	{
 		this->link[i].SetHaltMode(HALT_QUICKSTOP);
 	}
@@ -156,14 +157,14 @@ bool Gantry::catchCandy(double angularVel, double angular, double radius)
 		//driveback
 		this->setPump(false);
 		//Drive to Output
-		this->ptpMove(dropPos);
+		this->ptpMove(DROP_POS);
 		this->setValve(true);
-		this->ptpMove(lurkPos);
+		this->ptpMove(LURK_POS);
 	}
 	else
 	{
 		this->setPump(false);
-		this->ptpMove(lurkPos);
+		this->ptpMove(LURK_POS);
 		return false;
 	}
 	//Upload trajectory to buffer and start movement
@@ -192,7 +193,7 @@ bool Gantry::prepareCatch()
 {
 	this->link.ClearLatchedError();
 
-	ptpMove(lurkPos);
+	ptpMove(LURK_POS);
 	//Check Motor state
 	return false;
 }
@@ -211,10 +212,10 @@ void Gantry::waitingProgram(int times)
 	//switch case for programs
 	for (int i = 0; i < times; i++)
 	{
-		ptpMove(lurkPos);
-		ptpMove(discCenterPos);
+		ptpMove(LURK_POS);
+		ptpMove(DISC_CENTER_POS);
 	}
-	ptpMove(homePos);
+	ptpMove(LURK_POS);
 }
 
 
@@ -224,7 +225,7 @@ bool Gantry::homeAxis()
 	//otherwiese
 	//HomeConfig hcfg;
 	//err = link[i].GoHome( hcfg );
-	for (short i = numAmp - 1; i >= 0; i--)
+	for (short i = NUM_AMP - 1; i >= 0; i--)
 	{
 		//Home each amplifier with the default homeing settings
 		err = this->link[i].GoHome();
@@ -258,7 +259,7 @@ bool Gantry::homeAxis()
 void Gantry::calcMovement(double angularVelOffset, double angularOffset, double radius) {
 	//get candy object and calc move
 	//Check if radius is out of range
-	if (radius < discRadius[0] || radius > discRadius[1])
+	if (radius < DISC_RADIUS[0] || radius > DISC_RADIUS[1])
 	{
 		printf("radius out of operation area");
 		exit(1);
@@ -268,8 +269,8 @@ void Gantry::calcMovement(double angularVelOffset, double angularOffset, double 
 	//first move is ptp
 
 
-	pos[0] = radius * sin(angularOffset) + discCenterPos[0];
-	pos[1] = radius * -cos(angularOffset) + discCenterPos[1];
+	pos[0] = radius * sin(angularOffset) + DISC_CENTER_POS[0];
+	pos[1] = radius * -cos(angularOffset) + DISC_CENTER_POS[1];
 	pos[2] = 24000;
 
 	//double t = 0.01;

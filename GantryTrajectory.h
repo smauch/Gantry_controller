@@ -1,7 +1,7 @@
 #ifndef GANTRYTRAJECTORY_H 
 #define GANTRYTRAJECTORY_H
 
-#include "dependencies/inc/CML.h"
+#include "CML.h"
 
 class GantryTrajectory : public LinkTrajectory
 {
