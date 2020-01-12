@@ -25,7 +25,6 @@ extern "C"
 #define _USE_MATH_DEFINES
 
 #include "rotarytable.h"
-
 #include <iostream> 
 
 
@@ -135,7 +134,7 @@ RotaryTable::RotaryTable(){
 }
 
 /*************************Function for setting the velocity of the servo motor in U/min*************************************************/
-void RotaryTable::SetVelocity(BOOL velocity, BOOL v_acc, BOOL v_dec) {
+void RotaryTable::setVelocity(BOOL velocity, BOOL v_acc, BOOL v_dec) {
 	m_vel = velocity;
 
 	m_sdo_no = COP_k_DEFAULT_SDO;
@@ -160,7 +159,7 @@ void RotaryTable::SetVelocity(BOOL velocity, BOOL v_acc, BOOL v_dec) {
 	
 }
 
-void RotaryTable::StartMovement() {
+void RotaryTable::startMovement() {
 
 	m_abortcode = 0;
 	m_mode_motor = 0x74;
@@ -172,7 +171,7 @@ void RotaryTable::StartMovement() {
 
 }
 
-void RotaryTable::StopMovement(void) {
+void RotaryTable::stopMovement(void) {
 
 	m_abortcode = 0;
 	m_mode_motor = 0x03;
@@ -181,7 +180,7 @@ void RotaryTable::StopMovement(void) {
 
 }
 
-void RotaryTable::UpdateVelocity(BOOL upvelocity) {
+void RotaryTable::updateVelocity(BOOL upvelocity) {
 
 	m_vel = upvelocity;
 	m_abortcode = 0;

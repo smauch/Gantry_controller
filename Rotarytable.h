@@ -30,13 +30,14 @@ public:
 	~RotaryTable();
 	
 	/*Use this function to set the params for the ramps and the needed velocity in U/min  */
-	void SetVelocity(BOOL velocity, BOOL v_acc, BOOL v_dec);
+	void setVelocity(BOOL velocity, BOOL v_acc, BOOL v_dec);
 
 	/*Functions to start and stop the movement the movement*/
-	void StartMovement(void);
-	void StopMovement(void);
-	void UpdateVelocity(BOOL upvelocity);
+	void startMovement(void);
+	void stopMovement(void);
+	void updateVelocity(BOOL upvelocity);
 	double getAngVelocity();
+	bool isMoving(void);
 
 private:
 
