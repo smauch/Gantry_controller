@@ -58,8 +58,6 @@ RotaryTable::RotaryTable(){
 
 	//Initializsation of board
 	m_res = COP_InitBoard(&m_Board_Hdl, &m_boardtype, &m_boardID, m_canline);
-	std::cout << m_res << std::endl;
-
 	try
 	{
 		if (m_res != BER_k_OK)
@@ -77,8 +75,6 @@ RotaryTable::RotaryTable(){
 
 	//Initialization of interface
 	m_res2 = COP_InitInterface(m_Board_Hdl, m_baudtable, m_baudrate, m_node_no_master, m_hbtime, m_AddFeatures);
-	std::cout << m_res2 << std::endl;
-
 	try
 	{
 		if (m_res2 != COP_k_OK)
@@ -92,12 +88,8 @@ RotaryTable::RotaryTable(){
 		std::cout << e << std::endl;
 
 	}
-
-
 	//Add of node to the can network
 	m_res3 = COP_AddNode(m_Board_Hdl, m_node_no_slave, m_NgOrHb, m_GuardHeartbeatTime + 100, m_lifetimefactor);
-	std::cout << m_res3 << std::endl;
-
 	try
 	{
 		if (m_res3 != COP_k_OK)
@@ -122,9 +114,7 @@ RotaryTable::RotaryTable(){
 
 	for (auto i = 0; i < 2; i++)
 	{
-		results[i] = COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, idx_vector[i], subidx_vector[i], sizeof(value_vector[i]), (PBYTE)&value_vector[i], &m_abortcode);
-		
-		std::cout << results[i] << std::endl;
+		results[i] = COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, idx_vector[i], subidx_vector[i], sizeof(value_vector[i]), (PBYTE)&value_vector[i], &m_abortcode);	
 		
 		try
 		{
@@ -187,6 +177,16 @@ void RotaryTable::StopMovement(void) {
 	//Stopping motor
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 1, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
 
+}
+
+void RotaryTable::UpdateVelocity(BOOL upvelocity) {
+
+	m_vel = upvelocity;
+	m_abortcode = 0;
+	m_mode_motor = 0x05;
+	//Writing the corresponding velocity
+	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, sizeof(m_vel), (PBYTE)&m_vel, &m_abortcode);
+	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 1, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
 }
 
 RotaryTable::~RotaryTable(){
