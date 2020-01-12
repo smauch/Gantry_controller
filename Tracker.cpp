@@ -121,9 +121,9 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
 	cv::Mat initialFrame = camera.grab(true);
 
     std::vector<Candy> detectedCandies = getCandiesInFrame(color, initialFrame);
-    if (detectedCandies.size() == 0) {
+    /*if (detectedCandies.size() == 0) {
         return NULL;
-    }
+    }*/
     Candy detectedCandy = detectedCandies.front();
     for (int i = 0; i < frames; i++) {
 		cv::Mat currentImage = camera.grab(true);

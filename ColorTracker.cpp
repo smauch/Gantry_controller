@@ -172,6 +172,6 @@ json11::Json ColorTracker::to_json() const {
             { "minSize", this->minSize},
             { "maxSize", this->maxSize},
     };
-
-    return outputJson;
+    std::string json_str = outputJson.dump();
+    return json_str;
 }
