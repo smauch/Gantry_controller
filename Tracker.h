@@ -12,6 +12,7 @@
 #include "ColorTracker.h"
 #include "Coordinates.h"
 #include "Camera.h"
+#include "json11.hpp"
 #include <exception>
 
 struct NoCandyException : public std::exception {
@@ -26,13 +27,13 @@ struct NoCandyException : public std::exception {
 class Tracker {
     private:
         /** center x value of the plate **/
-        int centerX = 540;
+        int centerX;
         /** center y value of the plate **/
-        int centerY = 540;
+        int centerY;
         /** radius of the plate **/
-        int outerRadius = 540;
+        int outerRadius;
         /** radius of the mounting thingy **/
-        int innerRadius = 90;
+        int innerRadius;
         /** source of video **/
 		Camera camera;
         /** the color trackers for the candies **/
@@ -46,6 +47,8 @@ class Tracker {
     public:
         // constructor
         Tracker(int iCenterX, int iCenterY, int iOuterRadius, int iInnerRadius, Camera camera, std::vector<ColorTracker> iColorTrackers);
+        Tracker(json11::Json json, Camera camera, std::vector<ColorTracker> iColorTrackers);
+        Tracker();
         // tracks all candies of the given color in the frame
         std::vector<Candy> getCandiesInFrame(Colors color, cv::Mat image);
         // marks the given candy in the given frame
@@ -54,6 +57,8 @@ class Tracker {
         Candy getCandyOfColor(Colors color, int frames = 1);
         // gives the user the option to adjust the values of the tracker
         void configure(cv::Mat image);
+        // saves some settings of the class
+        json11::Json to_json() const;
 };
 
 #endif

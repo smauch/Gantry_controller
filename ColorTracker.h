@@ -4,6 +4,7 @@
 #include "opencv2/opencv.hpp"
 #include "json11.hpp"
 #include <string>
+#include "Camera.h"
 
 /**
  * this class models a color tracker for one color
@@ -14,14 +15,14 @@ class ColorTracker {
         std::string name;
 
         /** value for blue or hue **/
-        int value1 = 0;
+        int value1;
         /** value for green or saturation **/
-        int value2 = 0;
+        int value2;
         /** value for red or value **/
-        int value3 = 0;
+        int value3;
 
         /** tolerance of the tracker **/
-        int tolerance = 0;
+        int tolerance;
 
         /** what color representation is used **/
         bool bgr = false;
@@ -48,10 +49,10 @@ class ColorTracker {
         // gets the colorspace specified by the tracker 
         cv::Mat getColorSpace(cv::Mat image);
         // lets the user configure the tracker
-        void configure(cv::Mat image);
+        void configure(Camera camera);
         // converts the class to a json object
         json11::Json to_json() const;
-
+        // creates a vector of ColorTrackers from a single json file
         static std::vector<ColorTracker> getColorTrackersFromJson(std::string filepath);
 };
 #endif

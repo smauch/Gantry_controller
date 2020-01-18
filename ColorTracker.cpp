@@ -96,8 +96,8 @@ cv::Mat ColorTracker::getColorSpace(cv::Mat image) {
  *
  * @param image an image for testing
  */
-void ColorTracker::configure(cv::Mat image) {
-    cv::Mat cpyImage = image.clone();
+void ColorTracker::configure(Camera camera) {
+    
     cv::namedWindow("Control", cv::WINDOW_AUTOSIZE);
 
     int toggleBgr = bgr;
@@ -112,16 +112,18 @@ void ColorTracker::configure(cv::Mat image) {
     cv::createTrackbar("maxSize", "Control", &maxSize, 10000);
     cv::createTrackbar("hsv or bgr", "Control", &toggleBgr, 1);
 
-    cv::GaussianBlur(cpyImage, cpyImage, cv::Size(5, 5), 1);
+    
 
     while (true) {
+        cv::Mat image = camera.grab(true);
+        cv::GaussianBlur(image, image, cv::Size(5, 5), 2);
         bgr = toggleBgr;
 
         if (!bgr && value1 > 179) {
             value1 = 179; // max value for hue in opencv is 179
         }
 
-        cv::Mat mask = getColorSpace(cpyImage);
+        cv::Mat mask = getColorSpace(image);
         cv::Mat smoothedMask = smoothImage(mask);
         cv::Mat res;
         image.copyTo(res, smoothedMask);
@@ -148,13 +150,17 @@ void ColorTracker::configure(cv::Mat image) {
         // prints the color of the current tracker
         cv::putText(res, name, cv::Point(10,100), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255,255,255), 3, 8);
 
-        cv::imshow("Control picture", res);
-        cv::imshow("picture", cpyImage);
+        int rows = max(res.rows, image.rows);
+        int cols = res.cols + image.cols;
+        cv::Mat output(rows, cols, CV_8UC3, cv::Scalar(0, 0, 0));
+        res.copyTo(output(cv::Rect(0, 0, res.cols, res.rows)));
+        image.copyTo(output(cv::Rect(res.cols, 0, image.cols, image.rows)));
+
+        cv::imshow("Control", output);
+        //cv::imshow("picture", image);
 
         if (cv::waitKey(1) == 27) { // esc quits the configuration
-            cv::destroyWindow("Control");
-            cv::destroyWindow("picture");
-            cv::destroyWindow("Control picture");
+            //cv::destroyWindow("Control");
             break;
         }
     }

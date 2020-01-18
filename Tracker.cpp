@@ -14,12 +14,29 @@
  * @param colorTracker a vector of all available colors
  */
 Tracker::Tracker(int centerX, int centerY, int outerRadius, int innerRadius, Camera camera, std::vector<ColorTracker> colorTrackers) {
-    this -> centerX = centerX;
-    this -> centerY = centerY;
-    this -> outerRadius = outerRadius;
-    this -> innerRadius = innerRadius;
-    this -> camera = camera;
-    this -> colorTrackers = colorTrackers;
+    this->centerX = centerX;
+    this->centerY = centerY;
+    this->outerRadius = outerRadius;
+    this->innerRadius = innerRadius;
+    this->camera = camera;
+}
+
+
+Tracker::Tracker(json11::Json json, Camera camera, std::vector<ColorTracker> colorTrackers) {
+    this->centerX = json["centerX"].int_value();
+    this->centerY = json["centerY"].int_value();
+    this->outerRadius = json["outerRadius"].int_value();
+    this->innerRadius = json["innerRadius"].int_value();
+    this->camera = camera;
+    this->colorTrackers = colorTrackers;
+}
+
+Tracker::Tracker() {
+    this->centerX = 0;
+    this->centerY = 0;
+    this->outerRadius = 0;
+    this->innerRadius = 0;
+    this->camera = (Camera) NULL;
 }
 
 /**
@@ -180,12 +197,27 @@ void Tracker::configure(cv::Mat image) {
         cv::Point imageCenter(centerX, centerY);
         cv::Mat croppedImage = circleROI(cpyImage, imageCenter, 5, false);
         croppedImage = circleROI(croppedImage, imageCenter, outerRadius, true);
-        cv::imshow("Control picture", croppedImage);
+        cv::imshow("Control", croppedImage);
 
         if (cv::waitKey(1) == 27) {
             cv::destroyWindow("Control");
-            cv::destroyWindow("Control picture");
+            //::destroyWindow("Control picture");
             break;
         }
     }
+}
+
+/**
+ * saves some settings of the class
+ *
+ * @return a json object
+ */
+json11::Json Tracker::to_json() const {
+    json11::Json outputJson = json11::Json::object{
+        { "centerX", this->centerX },
+            { "centerY", this->centerY},
+            { "outerRadius", this->outerRadius},
+            { "innerRadius", this->innerRadius},
+    };
+    return outputJson;
 }
