@@ -5,6 +5,15 @@
 
 CML_NAMESPACE_USE();
 
+//Initialization of Fix points
+const int Gantry::LURK_POS[Gantry::NUM_AMP] = { 138000, 0, 15000 };
+const int Gantry::HOME_POS[Gantry::NUM_AMP] = { 0,0,0 };
+const int Gantry::DROP_POS[Gantry::NUM_AMP] = { 0, 46350, 0 };
+const int Gantry::DISC_CENTER_POS[Gantry::NUM_AMP] = { 110000, 46350, 20000 };
+const int Gantry::CATCH_Z_HEIGHT = 25250;
+const int Gantry::DISC_RADIUS[2] = { 8000, 46350 };
+
+
 
 static void showerr(const Error* err, const char* msg) {
 	if (!err) return;
@@ -135,11 +144,21 @@ bool Gantry::initGantry()
 
 
 
-bool Gantry::catchCandy(double angularVel, double angular, double radius)
+bool Gantry::catchCandy(double angularVel, double angular, double myRadius)
 {
+	double radius = 46350 * (myRadius / 540.0);
 	//Time measurement to catch
 	auto start_move = std::chrono::high_resolution_clock::now();
-	this->calcMovement(angularVel, angular, radius);
+
+	if (radius < DISC_RADIUS[0] || radius > DISC_RADIUS[1])
+	{
+		printf("radius out of operation area");
+		exit(1);
+	}
+	pos[0] = radius * sin(angular) + DISC_CENTER_POS[0];
+	pos[1] = radius * -cos(angular) + DISC_CENTER_POS[1];
+	pos[2] = CATCH_Z_HEIGHT;
+
 	auto stop_clac = std::chrono::high_resolution_clock::now();
 	this->setValve(false);
 	this->setPump(true);
@@ -178,22 +197,6 @@ bool Gantry::catchCandy(double angularVel, double angular, double radius)
 		this->ptpMove(LURK_POS);
 		return false;
 	}
-	//Upload trajectory to buffer and start movement
-	/*for (int i = 0; i < 200; i++)
-	{
-		std::cout << "Pos " << trj.xPos[i] << "," << trj.yPos[i] << "," << trj.zPos[i] << "," << std::endl;
-		std::cout << "Vel " << trj.xVel[i] << "," << trj.yVel[i] << "," << trj.zVel[i] << "," << std::endl;
-		std::cout << "Time " << trj.trjTime[i] << std::endl;	
-
-	}
-
-	err = link.SendTrajectory(trj);
-	showerr(err, "Loading trajectory to Buffer");
-	err = link.StartMove();
-	showerr(err, "Starting trj in Buffer");
-	err = link.WaitMoveDone(20000);
-	showerr(err, "Waiting for trj done");*/
-	//Check presure of z-axis to make sure that candy has been catched
 	return false;
 }
 
@@ -227,6 +230,19 @@ void Gantry::waitingProgram(int times)
 		ptpMove(DISC_CENTER_POS);
 	}
 	ptpMove(LURK_POS);
+}
+
+bool Gantry::pvtMove()
+{
+	//Upload trajectory to buffer and start movement
+	err = link.SendTrajectory(trj);
+	showerr(err, "Loading trajectory to Buffer");
+	err = link.StartMove();
+	showerr(err, "Starting trj in Buffer");
+	err = link.WaitMoveDone(20000);
+	showerr(err, "Waiting for trj done");
+	//Check presure of z-axis to make sure that candy has been catched
+	return false;
 }
 
 
@@ -267,57 +283,6 @@ bool Gantry::homeAxis()
 
 
 
-void Gantry::calcMovement(double angularVelOffset, double angularOffset, double radius) {
-	//get candy object and calc move
-	//Check if radius is out of range
-	if (radius < DISC_RADIUS[0] || radius > DISC_RADIUS[1])
-	{
-		printf("radius out of operation area");
-		exit(1);
-	}
-
-	//get current motorPos should be lurk pos
-	//first move is ptp
-
-
-	pos[0] = radius * sin(angularOffset) + DISC_CENTER_POS[0];
-	pos[1] = radius * -cos(angularOffset) + DISC_CENTER_POS[1];
-	pos[2] = CATCH_Z_HEIGHT;
-	//pos[2] = 24000;
-
-	//double t = 0.01;
-	//double angularVelMax = PI / 4;
-	//double angularAccMax = PI / 4;
-	//for (int i  = 0; i < NUMBER_POS_CALC; i++)
-	//{
-	//	if (angularVel < angularVelMax) {
-	//		angularAcc = angularAccMax;
-	//	}
-	//	else
-	//	{
-	//		angularAcc = 0;
-	//	}
-
-	//	angular = angular + angular * t + angularAcc * t * t / 2;
-	//	angularVel = angularVel + angularAcc * t;
-
-	//	trj.xPos[i] = cos(angular) * radius + discCenterPos[0];
-	//	trj.yPos[i] = sin(angular) * radius + discCenterPos[1];
-	//	trj.zPos[i] = 20000;
-	//	trj.xVel[i] = -cos(angular) * angularVel * radius;
-	//	trj.yVel[i] = sin(angular) * angularVel * radius;
-	//	trj.zVel[i] = 0;
-	//	if (i < NUMBER_POS_CALC - 1) {
-	//		trj.trjTime[i] = t;
-	//	}
-	//	else
-	//	{
-	//		trj.trjTime[i] = 0;
-	//	}
-
-	//}
-
-}
 
 void Gantry::ptpMove(const int arr[3])
 {

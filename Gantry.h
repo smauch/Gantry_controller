@@ -11,64 +11,46 @@
 #include <string>
 #include <filesystem>
 #include <math.h>   
-//#include "GantryTrajectory.h"
+#include "GantryTrajectory.h"
 
 #define PI 3.14159265
 
 using namespace CML;
 
-class GantryTrajectory : public LinkTrajectory
-{
-	//It is therefore important to ensure that the trajectory object passed here will remain
-	//valid(i.e. not be deallocated) until the linkage has called the LinkTrajectory.Finish() method
-public:
-	uunit xPos[200];
-	uunit yPos[200];
-	uunit zPos[200];
-	uunit xVel[200];
-	uunit yVel[200];
-	uunit zVel[200];
-	uunit trjTime[200];
-	int posCounter = 0;
-
-	virtual const Error* StartNew(void) { return 0; }
-
-	virtual void Finish(void) {
-		std::cout << "fertisch" << std::endl;
-	}
-
-	virtual int GetDim(void) {
-		return 3;
-	}
-
-	virtual bool UseVelocityInfo(void) { return false; }
-
-	virtual const Error* NextSegment(uunit pos[], uunit vel[], uint8& time) {
-		//Samuels pure Virtual override
-
-		pos[0] = xPos[posCounter];
-		pos[1] = 0;
-		pos[2] = 0;
-		time = trjTime[posCounter];
-		posCounter++;
-		return 0;
-	}
-};
 
 class Gantry
 {
-	
-private:
-	//Position consts
-	const int LURK_POS[3] = { 138000, 0, 15000 };
-	const int HOME_POS[3] = { 0,0,0 };
-	const int DROP_POS[3] = { 0,46350,0 };
-	const int DISC_CENTER_POS[3] = { 110000, 46350, 20000 };
-	const int CATCH_Z_HEIGHT = 25250;
-	//Minimum radius and maximum radius of the disc
-	const int DISC_RADIUS[2] = { 8000, 46350 };
+public:
 	//Number of amplifiers
-	static const int NUM_AMP = 3;
+	const static int NUM_AMP = 3;
+
+	//Position consts
+	const static int LURK_POS[NUM_AMP];
+	const static int HOME_POS[NUM_AMP];
+	const static int DROP_POS[NUM_AMP];
+	const static int DISC_CENTER_POS[NUM_AMP];
+	const static int CATCH_Z_HEIGHT;
+	//Minimum radius and maximum radius of the disc
+	const static int DISC_RADIUS[2];
+
+	//Constructor
+	Gantry();
+	~Gantry();
+
+	//Loads amplifier CME2 configuration files and homes gantry
+	bool initGantry();
+	//Moves to lurk position 
+	bool prepareCatch();
+	//Catch candy start at lurk position
+	bool catchCandy(double angularVel, double angularOffset, double radius);
+	//Moves to output and drop Gantry
+	bool outputCandy();
+	//Programm that performes wait patterns
+	void waitingProgram(int times);
+	//PVT move
+	bool pvtMove();
+
+private:
 
 	//Error obj to show error that are generated from CML
 	const Error* err;
@@ -91,7 +73,6 @@ private:
 	//Home each axis seperatly due to may occuring under voltage
 	bool homeAxis();
 	//Trajectory planing with given angular velocity and angular of the disc
-	void calcMovement(double angularVelOffset, double angularOffset, double radius);
 	//Method to perform point to point moves with S-Curve profile
 	void ptpMove(const int arr[3]);
 
@@ -105,21 +86,6 @@ private:
 	bool setValve(bool state);
 	bool getCatched();
 
-public:
-	const int NUMBER_POS_CALC = 200;
-	//Constructor
-	Gantry();
-	~Gantry();
 
-	//Loads amplifier CME2 configuration files and homes gantry
-	bool initGantry();
-	//Moves to lurk position 
-	bool prepareCatch();
-	//Catch candy start at lurk position
-	bool catchCandy(double angularVel, double angularOffset, double radius);
-	//Moves to output and drop Gantry
-	bool outputCandy();
-	//Programm that performes wait patterns
-	void waitingProgram(int times);
 };
 #endif

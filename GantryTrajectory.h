@@ -1,12 +1,14 @@
 #ifndef GANTRYTRAJECTORY_H 
 #define GANTRYTRAJECTORY_H
-
 #include "CML.h"
+
+using namespace CML;
 
 class GantryTrajectory : public LinkTrajectory
 {
-
-public:
+private:
+	const int NUMBER_POS_CALC = 200;
+	int posCounter = 0;
 	uunit xPos[200];
 	uunit yPos[200];
 	uunit zPos[200];
@@ -14,29 +16,17 @@ public:
 	uunit yVel[200];
 	uunit zVel[200];
 	uunit trjTime[200];
-	int posCounter = 0;
 
-	virtual const Error* StartNew(void) { return 0; }
 
-	virtual void Finish(void) {
-		std::cout << "fertisch" << std::endl;
-	}
-
-	virtual int GetDim(void) {
-		return 3;
-	}
-
-	virtual bool UseVelocityInfo(void) { return false; }
-
-	virtual const Error* NextSegment(uunit pos[], uunit vel[], uint8& time) {
-		//Samuels pure Virtual override
-	
-		pos[0] = xPos[posCounter];
-		pos[1] = 0;
-		pos[2] = 0;
-		time = trjTime[posCounter];
-		posCounter++;
-		return 0;
-	}
+public:
+	//Constructor
+	GantryTrajectory();
+	~GantryTrajectory();
+	virtual const Error* StartNew(void);
+	virtual void Finish(void);
+	virtual int GetDim(void);
+	virtual bool UseVelocityInfo(void);
+	virtual const Error* NextSegment(uunit pos[], uunit vel[], uint8& time);
+	bool calcMovement(Linkage link, double angularVel, double angular, double radius, int time);
 };
 #endif
