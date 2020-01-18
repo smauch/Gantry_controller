@@ -29,9 +29,6 @@ class Candy {
         Coordinates getCurrentPosition() { return currentPosition; }
         // getter angularVelocity
         double getAngularVelocity() { return angularVelocity; }
-
-        // predicts the position in X frames
-        Coordinates predictPosition(int frames);
 };
 
 #endif
