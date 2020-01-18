@@ -6,7 +6,7 @@
  * @param x x value
  * @param y y value
  */
-Coordinates::Coordinates(float x, float y) {
+Coordinates::Coordinates(double x, double y) {
     fromCartesian(x, y);
 }
 
@@ -16,7 +16,7 @@ Coordinates::Coordinates(float x, float y) {
  * @param x x value
  * @param y y value 
  */
-void Coordinates::fromCartesian(float x, float y) {
+void Coordinates::fromCartesian(double x, double y) {
     this->x = x;
     this->y = y;
     if (x == 0 && y == 0 ) {
@@ -45,7 +45,7 @@ void Coordinates::fromCartesian(float x, float y) {
  * @param r radius
  * @param phi angle in radians
  */
-void Coordinates::fromPolar(float r, float phi) {
+void Coordinates::fromPolar(double r, double phi) {
     this->r = r;
     if (phi > (M_PI * 2)) {
         this -> phi = phi - (M_PI * 2);
@@ -64,7 +64,7 @@ void Coordinates::fromPolar(float r, float phi) {
  * @param nextValue the other coordinate
  * @return the difference in angle
  */
-float Coordinates::calculateStep(Coordinates nextValue) {
+double Coordinates::calculateStep(Coordinates nextValue) {
     double nextAngle = nextValue.getAngle();
     double value = nextAngle - phi;
 

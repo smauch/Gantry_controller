@@ -7,36 +7,36 @@
 class Coordinates {
     private:
         /** radius **/
-        float r;
+        double r;
         /** angle in radians **/
-        float phi;
+        double phi;
         /** x value **/
-        float x;
+        double x;
         /** y value **/
-        float y;
+        double y;
     public:
         // constructor
-        Coordinates(float x = 0, float y = 0);
+        Coordinates(double x = 0, double y = 0);
         // set from cartesian coordinates
-        void fromCartesian(float x, float y);
+        void fromCartesian(double x, double y);
         // set from polar coordinates
-        void fromPolar(float r, float phi);
+        void fromPolar(double r, double phi);
         // difference in angle between two coordinates
-        float calculateStep(Coordinates nextValue); 
+        double calculateStep(Coordinates nextValue); 
         // getter for radius
-        float getR() {
+        double getR() {
             return r;
         };
         // getter for phi
-        float getAngle() {
+        double getAngle() {
             return phi;
         };
         // getter for x
-        float getX() {
+        double getX() {
             return x;
         };
         // getter for y
-        float getY() {
+        double getY() {
             return y;
         };
 };

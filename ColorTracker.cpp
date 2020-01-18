@@ -15,15 +15,18 @@
  * @param maxSize maximum size of tracked object
  * @param bgr true if bgr tracker, false if hsv tracker
  */
-ColorTracker::ColorTracker(std::string name, int value1, int value2, int value3, int tolerance, int minSize, int maxSize, bool bgr) {
+ColorTracker::ColorTracker(std::string name, int blue, int green, int red, int hue, int saturation, int value, int tolerance, int minSize, int maxSize, int mode) {
     this->name = name;
-    this->value1 = value1;
-    this->value2 = value2;
-    this->value3 = value3;
+    this->blue = blue;
+    this->green = green;
+    this->red = red;
+    this->hue = hue;
+    this->saturation = saturation;
+    this->value = value;
     this->tolerance = tolerance;
     this->minSize = minSize;
     this->maxSize = maxSize;
-    this->bgr = bgr;
+    this->mode = mode;
 }
 
 /**
@@ -31,24 +34,30 @@ ColorTracker::ColorTracker(std::string name, int value1, int value2, int value3,
  */
 ColorTracker::ColorTracker() {
     this->name = "initialize me";
-    this->value1 = 0;
-    this->value2 = 0;
-    this->value3 = 0;
+    this->blue = 0;
+    this->green = 0;
+    this->red = 0;
+    this->hue = 0;
+    this->saturation = 0;
+    this->value = 0;
     this->tolerance = 0;
     this->minSize = 0;
     this->maxSize = 0;
-    this->bgr = false;
+    this->mode = 0;
 }
 
 ColorTracker::ColorTracker(json11::Json json) {
     this->name = json["name"].string_value();
-    this->value1 = json["value1"].int_value();
-    this->value2 = json["value2"].int_value();
-    this->value3 = json["value3"].int_value();
+    this->blue = json["blue"].int_value();
+    this->green = json["green"].int_value();
+    this->red = json["red"].int_value();
+    this->hue = json["hue"].int_value();
+    this->saturation = json["saturation"].int_value();
+    this->value = json["value"].int_value();
     this->tolerance = json["tolerance"].int_value();
     this->minSize = json["minSize"].int_value();
     this->maxSize = json["maxSize"].int_value();
-    this->bgr = json["bgr"].bool_value();
+    this->mode = json["mode"].int_value();
 }
 
 std::vector<ColorTracker> ColorTracker::getColorTrackersFromJson(std::string filepath) {
@@ -76,17 +85,24 @@ std::vector<ColorTracker> ColorTracker::getColorTrackersFromJson(std::string fil
  * @return treshholded image
  */
 cv::Mat ColorTracker::getColorSpace(cv::Mat image) {
-    cv::Mat cpyImage = image.clone();
-    cv::Scalar lowerBound(value1 - tolerance, value2 - tolerance, value3 - tolerance);
-    cv::Scalar upperBound(value1 + tolerance, value2 + tolerance, value3 + tolerance);
+    cv::Mat cpyImage;
+    cv::Mat imgThresholded;
+    cv::Scalar lowerBoundBGR(blue - tolerance, green - tolerance, red - tolerance);
+    cv::Scalar upperBoundBGR(blue + tolerance, green + tolerance, red + tolerance);
+    cv::Scalar lowerBoundHSV(hue - tolerance, saturation - tolerance, value - tolerance);
+    cv::Scalar upperBoundHSV(hue + tolerance, saturation + tolerance, value + tolerance);
 
-    if (!bgr) {
-        cvtColor(cpyImage, cpyImage, cv::COLOR_BGR2HSV);
+    if ((mode == 0) || (mode == 2)) {
+        cvtColor(image, cpyImage, cv::COLOR_BGR2HSV);
+        inRange(cpyImage, lowerBoundHSV, upperBoundHSV, imgThresholded);
     }
 
-    cv::Mat imgThresholded;
-
-    inRange(cpyImage, lowerBound, upperBound, imgThresholded);
+    if (mode == 1) {
+        inRange(image, lowerBoundBGR, upperBoundBGR, imgThresholded);
+    } else if (mode == 2) {
+        image.copyTo(cpyImage, imgThresholded);
+        inRange(cpyImage, lowerBoundBGR, upperBoundBGR, imgThresholded);
+    }
 
     return imgThresholded;
 }
@@ -100,28 +116,27 @@ void ColorTracker::configure(Camera camera) {
     
     cv::namedWindow("Control", cv::WINDOW_AUTOSIZE);
 
-    int toggleBgr = bgr;
 
-
-    cv::createTrackbar("B/H", "Control", &value1, 255); //Hue (0 - 179)
-    cv::createTrackbar("G/S", "Control", &value2, 255);
-    cv::createTrackbar("R/V", "Control", &value3, 255); //Saturation (0 - 255)
+    cv::createTrackbar("Blue", "Control", &blue, 255); //Hue (0 - 179)
+    cv::createTrackbar("Green", "Control", &green, 255);
+    cv::createTrackbar("Red", "Control", &red, 255); //Saturation (0 - 255)
+    cv::createTrackbar("Hue", "Control", &hue, 179); //Hue (0 - 179)
+    cv::createTrackbar("Saturation", "Control", &saturation, 255);
+    cv::createTrackbar("Value", "Control", &value, 255); //Saturation (0 - 255)
 
     cv::createTrackbar("tolerance", "Control", &tolerance, 100);
     cv::createTrackbar("minSize", "Control", &minSize, 10000);
     cv::createTrackbar("maxSize", "Control", &maxSize, 10000);
-    cv::createTrackbar("hsv or bgr", "Control", &toggleBgr, 1);
+    cv::createTrackbar("mode", "Control", &mode, 2);
 
     
 
     while (true) {
+        if (mode == 0) {
+
+        }
         cv::Mat image = camera.grab(true);
         cv::GaussianBlur(image, image, cv::Size(5, 5), 2);
-        bgr = toggleBgr;
-
-        if (!bgr && value1 > 179) {
-            value1 = 179; // max value for hue in opencv is 179
-        }
 
         cv::Mat mask = getColorSpace(image);
         cv::Mat smoothedMask = smoothImage(mask);
@@ -170,11 +185,14 @@ void ColorTracker::configure(Camera camera) {
 json11::Json ColorTracker::to_json() const {
     json11::Json outputJson = json11::Json::object {
         { "name", this->name },
-            { "value1", this->value1},
-            { "value2", this->value2},
-            { "value3", this->value3},
+            { "blue", this->blue},
+            { "green", this->green},
+            { "red", this->red},
+            { "hue", this->hue},
+            { "saturation", this->saturation},
+            { "value", this->value},
             { "tolerance", this->tolerance},
-            { "bgr", this->bgr},
+            { "mode", this->mode},
             { "minSize", this->minSize},
             { "maxSize", this->maxSize},
     };

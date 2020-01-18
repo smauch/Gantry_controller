@@ -146,12 +146,12 @@ Candy Tracker::getCandyOfColor(Colors color, int frames) {
     Candy detectedCandy = detectedCandies.front();
     for (int i = 0; i < frames; i++) {
 		cv::Mat currentImage = camera.grab(true);
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
         std::vector<Candy> currentFrameDetectedCandies = getCandiesInFrame(color, currentImage);
 		
         for (int k = 0; k < currentFrameDetectedCandies.size(); k++) {
             if (detectedCandy.isSameObject(currentFrameDetectedCandies[k])) {
-                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+                std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
                 int neededTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
                 detectedCandy.updateValues(currentFrameDetectedCandies[k].getCurrentPosition(), neededTime, 1.0 / frames);
                 break;
@@ -201,7 +201,6 @@ void Tracker::configure(cv::Mat image) {
 
         if (cv::waitKey(1) == 27) {
             cv::destroyWindow("Control");
-            //::destroyWindow("Control picture");
             break;
         }
     }

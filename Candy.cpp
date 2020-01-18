@@ -51,6 +51,21 @@ bool Candy::isSameObject(Candy otherObject) {
 }
 
 /**
+ * predicts the position of the candy in X frames
+ *
+ * @param frames prediciton for how many frames in the future
+ * @return the predicited position of the candy
+ */
+Coordinates Candy::predictPosition(int frames) {
+    double predictedAngle = currentPosition.getAngle() + (angularVelocity / 1000 * frames);
+    double radius = currentPosition.getR();
+    Coordinates output;
+    output.fromPolar(radius, predictedAngle);
+
+    return output;
+}
+
+/**
  * updates the values of the candy
  *
  * @param newPosition new position of the candy

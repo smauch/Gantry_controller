@@ -15,17 +15,21 @@ class ColorTracker {
         std::string name;
 
         /** value for blue or hue **/
-        int value1;
+        int blue;
         /** value for green or saturation **/
-        int value2;
+        int green;
         /** value for red or value **/
-        int value3;
+        int red;
+
+        /** value for blue or hue **/
+        int hue;
+        /** value for green or saturation **/
+        int saturation;
+        /** value for red or value **/
+        int value;
 
         /** tolerance of the tracker **/
         int tolerance;
-
-        /** what color representation is used **/
-        bool bgr = false;
 
         /** minimum size of a tracked object **/
         int minSize = 1000;
@@ -33,10 +37,13 @@ class ColorTracker {
         /** maximum size of tracked object **/
         int maxSize = 1000;
 
+        /** what color representation is used **/
+        int mode = 0; //0 = hsv, 1 = bgr, 2 = both
+
 
     public:
         // constructor
-        ColorTracker(std::string iName, int iValue1, int iValue2, int iValue3, int iTolerance, int minSize=1000, int maxSize=7000, bool iBgr=true);
+        ColorTracker(std::string name, int blue, int green, int red, int hue, int saturation, int value, int tolerance, int minSize, int maxSize, int mode);
         ColorTracker();
         ColorTracker(json11::Json json);
 

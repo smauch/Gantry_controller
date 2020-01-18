@@ -14,6 +14,7 @@ class Candy {
         /** angular velocity of the candy **/
         double angularVelocity;
 
+
     public:
         // constructors
         Candy(Colors iColor, Coordinates iCurrentPosition);
@@ -29,6 +30,8 @@ class Candy {
         Coordinates getCurrentPosition() { return currentPosition; }
         // getter angularVelocity
         double getAngularVelocity() { return angularVelocity; }
+        // predicts the position in X frames
+        Coordinates predictPosition(int frames);
 };
 
 #endif
