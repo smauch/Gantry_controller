@@ -48,7 +48,9 @@ public:
 	//Programm that performes wait patterns
 	void waitingProgram(int times);
 	//PVT move
-	bool pvtMove();
+	bool pvtMove(double radius, double angular, double angularVel);
+
+	void printPos();
 
 private:
 

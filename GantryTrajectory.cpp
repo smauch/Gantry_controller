@@ -21,6 +21,7 @@ const Error* GantryTrajectory::StartNew(void)
 
 void GantryTrajectory::Finish(void)
 {
+
 	std::cout << "fertisch" << std::endl;
 }
 
@@ -31,92 +32,80 @@ int GantryTrajectory::GetDim(void)
 
 bool GantryTrajectory::UseVelocityInfo(void)
 {
-	return false;
+	return true;
 }
 
 const Error* GantryTrajectory::NextSegment(uunit pos[], uunit vel[], uint8& time) {
 	//Samuels pure Virtual override
-
 	pos[0] = xPos[posCounter];
-	pos[1] = 0;
-	pos[2] = 0;
+	pos[1] = yPos[posCounter];
+	pos[2] = 15000;
+	vel[0] = xVel[posCounter];
+	vel[1] = yVel[posCounter];
+	vel[2] = 0;
 	time = trjTime[posCounter];
 	posCounter++;
+	if (posCounter >= NUMBER_POS_CALC) {
+		posCounter = 0;
+		circle(this->radius,this->angular,this->targetVel);
+	}
 	return 0;
 
 }
 
-bool GantryTrajectory::calcMovement(Linkage link, double angularVel, double angular, double radius, int time)
+void GantryTrajectory::circle(double radius, double angular, double angularVelTarget)
 {
+	this->radius = radius;
+	this->angular = angular;
+	this->targetVel = angularVelTarget;
+	double t = 0.01;
+	double angularVelMax = this->targetVel;
+	double angularAccMax = M_PI / 4;
+
+
+	for (int i = 0; i < NUMBER_POS_CALC; i++)
+	{
+		if (this->angularVel < angularVelMax) {
+			this->angularAcc = angularAccMax;
+		}
+		else
+		{
+			this->angularAcc = 0;
+		}
+
+		this->angular = this->angular + this->angularVel * t + this->angularAcc * t * t / 2;
+		this->angularVel = this->angularVel + this->angularAcc * t;
+
+		xPos[i] = cos(this->angular) * this->radius + Gantry::DISC_CENTER_POS[0];
+		yPos[i] = sin(this->angular) * this->radius + Gantry::DISC_CENTER_POS[1];
+		zPos[i] = sin(this->angular) * 5000 + 15000;
+		xVel[i] = -sin(this->angular) * this->angularVel * this->radius;
+		yVel[i] = cos(this->angular) * this->angularVel * this->radius;
+		zVel[i] = cos(this->angular) * this->angularVel * 5000;;
+		trjTime[i] = int(t * 1000);
+	}
+
+}
+
+bool GantryTrajectory::calcMovement(uunit actPos[], double angularVel, double angular, double radius, int time)
+{
+	std::cout << actPos[0] << ", " << actPos[1] << ", " << actPos[2] << std::endl;
 	//Check if radius is out of range
 	if (radius < Gantry::DISC_RADIUS[0] || radius > Gantry::DISC_RADIUS[1])
 	{
 		printf("radius out of operation area");
 		exit(1);
 	}
+	xPos[0] = actPos[0];
+	yPos[0] = actPos[1];
+	zPos[0] = actPos[2];
 
-	float predictedAngle = angular + (angularVel / 1000 * time);
-	
-	uunit actPos[Gantry::NUM_AMP];
-
-	//get current motorPos should be lurk pos
-	for (short i = 0; i < Gantry::NUM_AMP; i++)
-	{
-		link[i].GetPositionActual(actPos[i]);
-	}
-
-	xPos[0] = Gantry::LURK_POS[0];
-	yPos[0] = Gantry::LURK_POS[1];
-	zPos[0] = Gantry::LURK_POS[2];
-
-
-	radius* sin(angular) + Gantry::DISC_CENTER_POS[0];
-	radius * -cos(angular) + Gantry::DISC_CENTER_POS[1];
-	Gantry::CATCH_Z_HEIGHT;
+	//float predictedAngle = angular + (angularVel / 1000 * time);
+	//radius* sin(angular) + Gantry::DISC_CENTER_POS[0];
+	//radius * -cos(angular) + Gantry::DISC_CENTER_POS[1];
+	//Gantry::CATCH_Z_HEIGHT;
 	
 
-	double t = 0.01;
-	double angularVelMax = PI / 4;
-	double angularAccMax = PI / 4;
-	for (int i = 0; i < NUMBER_POS_CALC; i++)
-	{
-		xPos[i] = 0;
-		yPos[i] = 0;
-		zPos[i] = 0;
-
-		xVel[i] = 0;
-		yVel[i] = 0;
-		zVel[i] = 0;
-
-		trjTime[i] = 0;
-	}
-//{
-//	if (angularVel < angularVelMax) {
-//		angularAcc = angularAccMax;
-//	}
-//	else
-//	{
-//		angularAcc = 0;
-//	}
-
-//	angular = angular + angular * t + angularAcc * t * t / 2;
-//	angularVel = angularVel + angularAcc * t;
-
-//	trj.xPos[i] = cos(angular) * radius + discCenterPos[0];
-//	trj.yPos[i] = sin(angular) * radius + discCenterPos[1];
-//	trj.zPos[i] = 20000;
-//	trj.xVel[i] = -cos(angular) * angularVel * radius;
-//	trj.yVel[i] = sin(angular) * angularVel * radius;
-//	trj.zVel[i] = 0;
-//	if (i < NUMBER_POS_CALC - 1) {
-//		trj.trjTime[i] = t;
-//	}
-//	else
-//	{
-//		trj.trjTime[i] = 0;
-//	}
-
-//}
-
+	
 	return false;
 }

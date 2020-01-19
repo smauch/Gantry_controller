@@ -232,17 +232,43 @@ void Gantry::waitingProgram(int times)
 	ptpMove(LURK_POS);
 }
 
-bool Gantry::pvtMove()
+bool Gantry::pvtMove(double myRadius, double angular, double angularVel)
 {
+	double radius = 46350 * (myRadius / 540.0);
+	pos[0] = radius * cos(angular) + DISC_CENTER_POS[0];
+	pos[1] = radius * sin(angular) + DISC_CENTER_POS[1];
+	pos[2] = 15000;
+
+	err = this->link.MoveTo(pos);
+	showerr(err, "Starting move");
+	err = this->link.WaitMoveDone(20000);
+
+	uunit actPos[Gantry::NUM_AMP];
+	//get current motorPos should be lurk pos
+	for (short i = 0; i < Gantry::NUM_AMP; i++)
+	{
+		link[i].GetPositionActual(actPos[i]);
+	}
 	//Upload trajectory to buffer and start movement
-	err = link.SendTrajectory(trj);
+	trj.circle(radius, angular, angularVel);
+	err = link.SendTrajectory(trj,false);
 	showerr(err, "Loading trajectory to Buffer");
 	err = link.StartMove();
 	showerr(err, "Starting trj in Buffer");
-	err = link.WaitMoveDone(20000);
+	err = link.WaitMoveDone(60000);
 	showerr(err, "Waiting for trj done");
 	//Check presure of z-axis to make sure that candy has been catched
 	return false;
+}
+
+void Gantry::printPos()
+{
+	uunit actPos[NUM_AMP];
+	for (short i = 0; i < NUM_AMP; i++)
+	{
+		link[i].GetPositionActual(actPos[i]);
+	}
+	std::cout << actPos[0] << ", " << actPos[1] << ", " << actPos[2] << std::endl;
 }
 
 
