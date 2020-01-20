@@ -19,9 +19,10 @@ private:
 	uunit trjTime[NUMBER_POS_CALC];
 	double angularAcc = 0;
 	double angularVel = 0;
-	double targetVel = M_PI / 4;
 	double angular = M_PI;
 	double radius = 0;
+	double linVel = 0;
+	double linAcc = 0;
 public:
 	//Constructor
 	GantryTrajectory();
@@ -31,7 +32,7 @@ public:
 	virtual int GetDim(void);
 	virtual bool UseVelocityInfo(void);
 	virtual const Error* NextSegment(uunit pos[], uunit vel[], uint8& time);
-	bool calcMovement(uunit actPos[], double angularVel, double angular, double radius, int time);
+	bool calcMovement(uunit actPos[], double radius, double angular, double angularVelTarget);
 	void circle(double radius, double angular, double angularVel);
 };
 #endif

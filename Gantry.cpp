@@ -6,12 +6,13 @@
 CML_NAMESPACE_USE();
 
 //Initialization of Fix points
-const int Gantry::LURK_POS[Gantry::NUM_AMP] = { 138000, 0, 15000 };
-const int Gantry::HOME_POS[Gantry::NUM_AMP] = { 0,0,0 };
-const int Gantry::DROP_POS[Gantry::NUM_AMP] = { 0, 46350, 0 };
-const int Gantry::DISC_CENTER_POS[Gantry::NUM_AMP] = { 110000, 46350, 20000 };
-const int Gantry::CATCH_Z_HEIGHT = 25250;
-const int Gantry::DISC_RADIUS[2] = { 8000, 46350 };
+uunit Gantry::LURK_POS[Gantry::NUM_AMP] = { 138000, 0, 15000 };
+uunit Gantry::HOME_POS[Gantry::NUM_AMP] = { 0,0,0 };
+uunit Gantry::DROP_POS[Gantry::NUM_AMP] = { 0, 46350, 0 };
+uunit Gantry::DISC_CENTER_POS[Gantry::NUM_AMP] = { 110000, 46350, 20000 };
+uunit Gantry::CATCH_Z_HEIGHT = 25250;
+uunit Gantry::DISC_RADIUS[2] = { 8000, 46350 };
+double const Gantry::PIXEL_RADIUS = 540.0;
 
 
 
@@ -142,134 +143,132 @@ bool Gantry::initGantry()
 	return true;
 }
 
+/**
+*Catches a Candy that is moving on the rotary table
+*
+*@param angularVel the angular velocity of the candy in rad/ms
+*@param angular the angular of the candy relative to the camera perspective
+*@param radius the radius of the candy relative to the disc center in pixel
+*@param targetPos the position where the candy should be dropped
+*
+*@return true if the candy got chatched and is dropped at targePos
+*/
 
-
-bool Gantry::catchCandy(double angularVel, double angular, double myRadius)
+bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, uunit const targetPos[NUM_AMP], bool measureTime )
 {
-	double radius = 46350 * (myRadius / 540.0);
 	//Time measurement to catch
+
 	auto start_move = std::chrono::high_resolution_clock::now();
 
+	//Radius scaling from pixel to uunit
+	double radius = DISC_RADIUS[1] * (pixelRadius / PIXEL_RADIUS);
+	
 	if (radius < DISC_RADIUS[0] || radius > DISC_RADIUS[1])
 	{
+		//Should throw exception
 		printf("radius out of operation area");
-		exit(1);
+		return false;
 	}
-	pos[0] = radius * sin(angular) + DISC_CENTER_POS[0];
-	pos[1] = radius * -cos(angular) + DISC_CENTER_POS[1];
-	pos[2] = CATCH_Z_HEIGHT;
 
+	//Current angular position
+
+
+	//Upload trajectory to buffer and start movement
+	trj.calcMovement(getPos(), radius, angular, angularVel);
 	auto stop_clac = std::chrono::high_resolution_clock::now();
+	err = link.SendTrajectory(trj, false);
+	showerr(err, "Loading trajectory to Buffer");
 	this->setValve(false);
 	this->setPump(true);
-	err = this->link.MoveTo(pos);
-	showerr(err, "Starting move");
-	err = this->link.WaitMoveDone(20000);
-	
-	/*pos[2] = CATCH_Z_HEIGHT;
-	err = this->link.MoveTo(pos);
-	err = this->link.WaitMoveDone(20000);*/
-
-	auto stop_move= std::chrono::high_resolution_clock::now();
-	pos[2] = pos[2] - 10000;
-	err = this->link.MoveTo(pos);
-	showerr(err, "Starting move");
-	err = this->link.WaitMoveDone(20000);
+	err = link.StartMove();
+	showerr(err, "Starting trj in Buffer");
+	err = link.WaitMoveDone(60000);
+	showerr(err, "Waiting for trj done");
+	this->setPump(false);
+	auto stop_move = std::chrono::high_resolution_clock::now();
 	auto duration_calc = std::chrono::duration_cast<std::chrono::milliseconds>(stop_clac - start_move);
 	auto duration_move = std::chrono::duration_cast<std::chrono::milliseconds>(stop_move - stop_clac);
 	// To get the value of duration use the count() 
 	// member function on the duration object 
-	
-	//std::cout << "Calculation lasts" << duration_calc.count() << " microsenconds" << std::endl;
-	//std::cout << "Movement lasts " << duration_move.count() << " microsenconds" << std::endl;
+	std::cout << "Calculation lasts" << duration_calc.count() << " miliseconds" << std::endl;
+	std::cout << "Movement lasts " << duration_move.count() << " miliseconds" << std::endl;
 	if (getCatched())
 	{
 		//driveback
 		this->setPump(false);
 		//Drive to Output
-		this->ptpMove(DROP_POS);
+		this->ptpMove(targetPos);
 		this->setValve(true);
 		this->ptpMove(LURK_POS);
 	}
 	else
 	{
 		this->setPump(false);
-		this->ptpMove(LURK_POS);
+		//this->ptpMove(HOME_POS);
 		return false;
 	}
 	return false;
 }
 
 
-
-
 bool Gantry::prepareCatch()
 {
 	this->link.ClearLatchedError();
-
 	ptpMove(LURK_POS);
 	//Check Motor state
 	return false;
 }
 
-bool Gantry::outputCandy()
+/**
+* Catching candy from an none moving fix position and drop it at a target position
+*
+*@param candyPos is the position of the candy in uunits
+*@param targetPos is the position where the candy should be dropped of
+*/
+bool Gantry::catchStatic(uunit candyPos[NUM_AMP], uunit targetPos[NUM_AMP])
 {
-	//move to output 
-	//check pressure
+	candyPos[2] -= 1000;
+	ptpMove(candyPos);
+	this->setValve(false);
+	this->setPump(true);
+	candyPos[2] += 1000;
+	ptpMove(candyPos);
+	candyPos[2] -= 1000;
+	ptpMove(candyPos);
+	this->setPump(false);
+	ptpMove(targetPos);
+	this->setValve(true);
 	return false;
 }
 
-void Gantry::waitingProgram(int times)
+
+/**
+*Does a S-Curve move to the target Pos 
+*
+*@param target psoition as array x,y,z
+*/
+void Gantry::ptpMove(uunit const targetPos[NUM_AMP])
 {
-	//waiting program time in seconds
-	//rand to choose which program
-	//switch case for programs
-	for (int i = 0; i < times; i++)
+	for (int i = 0; i < NUM_AMP; i++)
 	{
-		ptpMove(LURK_POS);
-		ptpMove(DISC_CENTER_POS);
+		ampTargetPos[i] = targetPos[i];
 	}
-	ptpMove(LURK_POS);
-}
-
-bool Gantry::pvtMove(double myRadius, double angular, double angularVel)
-{
-	double radius = 46350 * (myRadius / 540.0);
-	pos[0] = radius * cos(angular) + DISC_CENTER_POS[0];
-	pos[1] = radius * sin(angular) + DISC_CENTER_POS[1];
-	pos[2] = 15000;
-
-	err = this->link.MoveTo(pos);
+	err = this->link.MoveTo(ampTargetPos);
 	showerr(err, "Starting move");
 	err = this->link.WaitMoveDone(20000);
-
-	uunit actPos[Gantry::NUM_AMP];
-	//get current motorPos should be lurk pos
-	for (short i = 0; i < Gantry::NUM_AMP; i++)
-	{
-		link[i].GetPositionActual(actPos[i]);
-	}
-	//Upload trajectory to buffer and start movement
-	trj.circle(radius, angular, angularVel);
-	err = link.SendTrajectory(trj,false);
-	showerr(err, "Loading trajectory to Buffer");
-	err = link.StartMove();
-	showerr(err, "Starting trj in Buffer");
-	err = link.WaitMoveDone(60000);
-	showerr(err, "Waiting for trj done");
-	//Check presure of z-axis to make sure that candy has been catched
-	return false;
+	showerr(err, "Waiting for move to finish");
 }
 
-void Gantry::printPos()
+uunit* Gantry::getPos()
 {
 	uunit actPos[NUM_AMP];
 	for (short i = 0; i < NUM_AMP; i++)
 	{
 		link[i].GetPositionActual(actPos[i]);
 	}
-	std::cout << actPos[0] << ", " << actPos[1] << ", " << actPos[2] << std::endl;
+	return actPos;
 }
+
 
 
 bool Gantry::homeAxis()
@@ -309,18 +308,4 @@ bool Gantry::homeAxis()
 
 
 
-
-void Gantry::ptpMove(const int arr[3])
-{
-	for (short i = 0; i < 3; i++)
-	{
-		pos[i] = arr[i];
-	}
-
-	err = this->link.MoveTo(pos);
-	showerr(err, "Starting move");
-
-	err = this->link.WaitMoveDone(20000);
-	showerr(err, "Waiting for move to finish");
-}
 

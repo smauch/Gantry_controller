@@ -25,13 +25,13 @@ public:
 	const static int NUM_AMP = 3;
 
 	//Position consts
-	const static int LURK_POS[NUM_AMP];
-	const static int HOME_POS[NUM_AMP];
-	const static int DROP_POS[NUM_AMP];
-	const static int DISC_CENTER_POS[NUM_AMP];
-	const static int CATCH_Z_HEIGHT;
+	static uunit LURK_POS[NUM_AMP];
+	static uunit HOME_POS[NUM_AMP];
+	static uunit DROP_POS[NUM_AMP];
+	static uunit DISC_CENTER_POS[NUM_AMP];
+	static uunit CATCH_Z_HEIGHT;
 	//Minimum radius and maximum radius of the disc
-	const static int DISC_RADIUS[2];
+	static uunit DISC_RADIUS[2];
 
 	//Constructor
 	Gantry();
@@ -42,15 +42,14 @@ public:
 	//Moves to lurk position 
 	bool prepareCatch();
 	//Catch candy start at lurk position
-	bool catchCandy(double angularVel, double angularOffset, double radius);
-	//Moves to output and drop Gantry
-	bool outputCandy();
-	//Programm that performes wait patterns
-	void waitingProgram(int times);
-	//PVT move
-	bool pvtMove(double radius, double angular, double angularVel);
+	bool catchRotary(double angularVel, double angular, double pixelRadius, uunit const targetPos[NUM_AMP], bool measureTime=false);
 
-	void printPos();
+	//Catches candy from none moving point
+	bool catchStatic (uunit startPos[NUM_AMP], uunit endPos[NUM_AMP]);
+
+	//position to positiion Move in uunit
+	void ptpMove(uunit const targetPos[NUM_AMP]);
+	uunit* getPos();
 
 private:
 
@@ -65,7 +64,7 @@ private:
 	//Create linkage object to handle the three axes simulatanously
 	Linkage link;
 	//Point Object for Point to point moves
-	Point<3> pos;
+	Point<3> ampTargetPos;
 	//Trajectory object
 	GantryTrajectory trj;
 	//CAN NodeIDs by the order X,Y,Z axis
@@ -76,12 +75,15 @@ private:
 	bool homeAxis();
 	//Trajectory planing with given angular velocity and angular of the disc
 	//Method to perform point to point moves with S-Curve profile
-	void ptpMove(const int arr[3]);
 
 	//Variables for motions of candy
 	double angular;
 	double angularVel;
 	double angularAcc;
+
+	//The half of the Camera resolution 1080/2
+	const static double PIXEL_RADIUS;
+
 
 	//Fix positions
 	bool setPump(bool state);
