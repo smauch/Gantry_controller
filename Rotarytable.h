@@ -87,35 +87,9 @@ BOOL m_vel_acc_dt;
 BOOL m_vel_dec_dv;
 BOOL m_vel_dec_dt;
 
-bool isMoving(void);
 
 
 };
-
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-	
-
-
-
-//BOOL RotaryTable::GetPos() { return m_currentpos; }
-
-
-
-
 
 
 
