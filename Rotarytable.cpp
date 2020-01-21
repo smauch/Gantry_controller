@@ -171,11 +171,11 @@ void RotaryTable::startMovement() {
 	bool moving = this->isMoving();
 	if (moving)
 	{
-		std::cout << "Motor is moving" << std::endl;
+		std::cout << "Motor is in good state" << std::endl;
 	}
 	else
 	{
-		std::cout << "Motor is standing still" << std::endl;
+		std::cout << "Motor has an internal error" << std::endl;
 	}
 }
 
@@ -199,11 +199,11 @@ void RotaryTable::updateVelocity(BOOL upvelocity) {
 	bool moving = this->isMoving();
 	if (moving)
 	{
-		std::cout << "Motor is moving" << std::endl;
+		std::cout << "Motor is in good state" << std::endl;
 	}
 	else
 	{
-		std::cout << "Motor is standing still" << std::endl;
+		std::cout << "Motor has an internal error" << std::endl;
 	}
 }
 
@@ -222,9 +222,8 @@ bool RotaryTable::isMoving(void)
 {
 	DWORD len;
 	m_abortcode = 0;	
-	COP_ReadSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4002, 1, &len, (PBYTE)&m_status, &m_abortcode);//& 0x04;
-	std::cout << m_status << std::endl;
-	if (m_status == 1) {
+	COP_ReadSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4001, 1, &len, (PBYTE)&m_status, &m_abortcode);//& 0x04;
+	if (m_status == 0) {
 		return true;
 	}
 	else { return false; }
