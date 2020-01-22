@@ -30,6 +30,8 @@ class Candy {
         Coordinates getCurrentPosition() { return currentPosition; }
         // getter angularVelocity
         double getAngularVelocity() { return angularVelocity; }
+        // getter color
+        Colors getColor() { return color; }
         // predicts the position in X frames
         Coordinates predictPosition(int frames);
 };

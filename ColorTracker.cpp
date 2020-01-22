@@ -46,6 +46,10 @@ ColorTracker::ColorTracker() {
     this->mode = 0;
 }
 
+/**
+ * constructor
+ * @param json a json object with information about the object
+ */
 ColorTracker::ColorTracker(json11::Json json) {
     this->name = json["name"].string_value();
     this->blue = json["blue"].int_value();
@@ -60,6 +64,11 @@ ColorTracker::ColorTracker(json11::Json json) {
     this->mode = json["mode"].int_value();
 }
 
+/**
+ * static function, creates a vector of colorTrackers from a json file
+ * @param filepath the filepath of the given json file
+ * @return the vector of colorTrackers
+ */
 std::vector<ColorTracker> ColorTracker::getColorTrackersFromJson(std::string filepath) {
     std::string line;
     std::ifstream jsonfile(filepath);
@@ -114,7 +123,8 @@ cv::Mat ColorTracker::getColorSpace(cv::Mat image) {
  */
 void ColorTracker::configure(Camera camera) {
     
-    cv::namedWindow("Control", cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("Control", cv::WINDOW_NORMAL);
+    cv::resizeWindow("Control", 1000, 1000);
 
 
     cv::createTrackbar("Blue", "Control", &blue, 255); //Hue (0 - 179)
@@ -124,7 +134,7 @@ void ColorTracker::configure(Camera camera) {
     cv::createTrackbar("Saturation", "Control", &saturation, 255);
     cv::createTrackbar("Value", "Control", &value, 255); //Saturation (0 - 255)
 
-    cv::createTrackbar("tolerance", "Control", &tolerance, 100);
+    cv::createTrackbar("tolerance", "Control", &tolerance, 255);
     cv::createTrackbar("minSize", "Control", &minSize, 10000);
     cv::createTrackbar("maxSize", "Control", &maxSize, 10000);
     cv::createTrackbar("mode", "Control", &mode, 2);
@@ -182,6 +192,11 @@ void ColorTracker::configure(Camera camera) {
 
 }
 
+/**
+ * creates a json object from this object
+ *
+ * @return a json object with information about the object
+ */
 json11::Json ColorTracker::to_json() const {
     json11::Json outputJson = json11::Json::object {
         { "name", this->name },

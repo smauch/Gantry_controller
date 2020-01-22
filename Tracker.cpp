@@ -92,12 +92,17 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image) {
     std::vector<cv::Moments> allMoments(contours.size());
     for (int i = 0; i < contours.size(); i++) {
         allMoments[i] = cv::moments(contours[i], false);
+        cv::Mat some(image);
+        approxPolyDP(cv::Mat(contours[i]), some, 3, true);
+        cv::imshow("some", image);
     }
 
     for (int i = 0; i < contours.size(); i++) {
         if (allMoments[i].m00 > colorTrackers[color].getMinSize() && allMoments[i].m00 < colorTrackers[color].getMaxSize()) {
             Coordinates center(allMoments[i].m10 / allMoments[i].m00 - centerX, allMoments[i].m01 / allMoments[i].m00 - centerY);
-            Candy detectedCandy(color, center); 
+            
+            
+            Candy detectedCandy(color, center);
             detectedCandies.push_back(detectedCandy);
         }
     }
