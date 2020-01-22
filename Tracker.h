@@ -15,6 +15,7 @@
 #include "json11.hpp"
 #include <exception>
 
+// custom exception for when no candy was found
 struct NoCandyException : public std::exception {
     const char* what() const throw() {
         return "There are no Candies";
@@ -43,6 +44,8 @@ class Tracker {
         cv::Mat pipeline(cv::Mat image);
         // gets colorspace of given color and image 
         cv::Mat getTreshedImage(Colors color, cv::Mat image);
+        // detects the color of a single candy in a picture
+        Colors detectColorOfCandy(cv::Mat image);
 
     public:
         // constructor
@@ -56,7 +59,7 @@ class Tracker {
         // tracks a single candy of the given color and return it with adjusted angularVelocity
         Candy getCandyOfColor(Colors color, int frames = 1);
         // gives the user the option to adjust the values of the tracker
-        void configure(cv::Mat image);
+        void configure();
         // saves some settings of the class
         json11::Json to_json() const;
 };

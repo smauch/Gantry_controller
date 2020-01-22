@@ -14,6 +14,10 @@
 cv::Mat circleROI(cv::Mat image, cv::Point center, int radius, bool inside);
 // smooths image
 cv::Mat smoothImage(cv::Mat image);
+// converts a single pylon image to a cv mat
 cv::Mat convertPylonImageToMat(Pylon::CGrabResultPtr ptrGrabResult);
+// prints a matrix
 void printMatrix(cv::Mat matrix);
+// removes all white pixels and only leaves colors
+cv::Mat removeWhitePixels(cv::Mat image);
 #endif 

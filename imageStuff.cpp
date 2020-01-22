@@ -40,16 +40,21 @@ cv::Mat smoothImage(cv::Mat image) {
     cv::Mat output;
 
     //morphological opening (remove small objects from the foreground)
-    cv::erode(image, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
-    cv::dilate(image, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5))); 
+    cv::erode(image, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+    cv::dilate(image, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3))); 
 
     //morphological closing (fill small holes in the foreground)
-    cv::dilate(image, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5))); 
-    cv::erode(image, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
+    cv::dilate(image, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3))); 
+    cv::erode(image, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
     
     return output;
 }
-
+/**
+ * converts a single pylon image into a cv mat
+ *
+ * @param ptrGrabResult the given pylon iamge
+ * @return a cv mat
+ */
 cv::Mat convertPylonImageToMat(Pylon::CGrabResultPtr ptrGrabResult) {
 	Pylon::CImageFormatConverter formatConverter;
 	Pylon::CPylonImage pylonImage;
@@ -62,6 +67,36 @@ cv::Mat convertPylonImageToMat(Pylon::CGrabResultPtr ptrGrabResult) {
 	return output;
 }
 
+/**
+ * removes all white pixels and only leaves colors
+ *
+ * @param image the given image
+ * @param image without white
+ */
+cv::Mat removeWhitePixels(cv::Mat image) {
+    cv::Mat cpyImg = image.clone();
+    cv::Mat hsv;
+
+    cvtColor(cpyImg, hsv, cv::COLOR_BGR2HSV);
+
+    cv::Mat mask;
+
+    cv::inRange(hsv, cv::Scalar(0, 60, 0), cv::Scalar(255, 255, 255), mask);
+
+    bitwise_not(mask, mask);
+
+    cv::equalizeHist(mask, mask);
+
+
+
+    return mask;
+}
+
+/**
+ * prints the given matrix
+ *
+ * @param matrix the given matrix
+ */
 void printMatrix(cv::Mat matrix) {
 	for (int i = 0; i < 1080; i++) {
 		for (int j = 0; j < 1080; j++) {
