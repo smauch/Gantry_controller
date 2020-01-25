@@ -91,9 +91,10 @@ void GantryTrajectory::circle(double radius, double angular, double angularVelTa
 
 bool GantryTrajectory::calcMovement(uunit actPos[], double radius, double currAngular, double angularVelTarget)
 {
+
 	//Make the preiction
 	std::cout << angularVelTarget << " rad /s" << std::endl;
-	double angular = currAngular + angularVelTarget * 1200 / 1000; ;
+	double angular = currAngular + angularVelTarget * 1400 / 1000; ;
 	double t = 0.01;
 	double angularVelMax = angularVelTarget;
 	double angularAccMax = M_PI;

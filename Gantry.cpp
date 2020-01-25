@@ -10,9 +10,12 @@ uunit Gantry::LURK_POS[Gantry::NUM_AMP] = { 138000, 0, 15000 };
 uunit Gantry::HOME_POS[Gantry::NUM_AMP] = { 0,0,0 };
 uunit Gantry::DROP_POS[Gantry::NUM_AMP] = { 0, 46350, 0 };
 uunit Gantry::DISC_CENTER_POS[Gantry::NUM_AMP] = { 110000, 46350, 20000 };
-uunit Gantry::CATCH_Z_HEIGHT = 25250;
+uunit Gantry::CATCH_Z_HEIGHT = 25260;
 uunit Gantry::DISC_RADIUS[2] = { 8000, 46350 };
 double const Gantry::PIXEL_RADIUS = 540.0;
+Point<3> lurk_pos;
+Point<3> home_pos;
+Point <3> drop_pos;
 
 
 
@@ -24,13 +27,20 @@ static void showerr(const Error* err, const char* msg) {
 
 Gantry::Gantry()
 {
+	for (int i = 0; i < NUM_AMP; i++)
+	{
+		home_pos[i] = HOME_POS[i];
+		lurk_pos[i] = LURK_POS[i];
+		drop_pos[i] = DROP_POS[i];
+
+	}
 
 }
 
 Gantry::~Gantry()
 {
 
-	ptpMove(HOME_POS);
+	ptpMove(home_pos);
 	for (int i = 0; i < NUM_AMP; i++)
 	{
 		err = this->link[i].Disable(true);
@@ -128,6 +138,7 @@ bool Gantry::initGantry()
 	for (short i = 0; i < NUM_AMP; i++)
 	{
 		this->link[i].SetHaltMode(HALT_QUICKSTOP);
+
 	}
 
 	//Movement limitations setup
@@ -154,7 +165,7 @@ bool Gantry::initGantry()
 *@return true if the candy got chatched and is dropped at targePos
 */
 
-bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, uunit const targetPos[NUM_AMP], bool measureTime )
+bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, Point<3> targetPos, bool measureTime )
 {
 	//Time measurement to catch
 
@@ -174,7 +185,13 @@ bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, 
 
 
 	//Upload trajectory to buffer and start movement
-	trj.calcMovement(getPos(), radius, angular, angularVel);
+	uunit actPos[NUM_AMP];
+	for (short i = 0; i < NUM_AMP; i++)
+	{
+		link[i].GetPositionActual(actPos[i]);
+	}
+
+	trj.calcMovement(actPos, radius, angular, angularVel);
 	auto stop_clac = std::chrono::high_resolution_clock::now();
 	err = link.SendTrajectory(trj, false);
 	showerr(err, "Loading trajectory to Buffer");
@@ -197,24 +214,30 @@ bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, 
 		//driveback
 		this->setPump(false);
 		//Drive to Output
+		targetPos[2] -= 5000;
+		this->ptpMove(targetPos);
+		targetPos[2] += 5000;
 		this->ptpMove(targetPos);
 		this->setValve(true);
-		this->ptpMove(LURK_POS);
+		targetPos[2] -= 5000;
+		this->ptpMove(targetPos);
+		this->ptpMove(lurk_pos);
+
+		return true;
 	}
 	else
 	{
 		this->setPump(false);
-		//this->ptpMove(HOME_POS);
+		this->ptpMove(lurk_pos);
 		return false;
 	}
-	return false;
 }
 
 
 bool Gantry::prepareCatch()
 {
 	this->link.ClearLatchedError();
-	ptpMove(LURK_POS);
+	ptpMove(lurk_pos);
 	//Check Motor state
 	return false;
 }
@@ -225,15 +248,15 @@ bool Gantry::prepareCatch()
 *@param candyPos is the position of the candy in uunits
 *@param targetPos is the position where the candy should be dropped of
 */
-bool Gantry::catchStatic(uunit candyPos[NUM_AMP], uunit targetPos[NUM_AMP])
+bool Gantry::catchStatic(Point<3> candyPos,Point<3> targetPos)
 {
-	candyPos[2] -= 1000;
+	candyPos[2] -= 6000;
 	ptpMove(candyPos);
 	this->setValve(false);
 	this->setPump(true);
-	candyPos[2] += 1000;
+	candyPos[2] += 6000;
 	ptpMove(candyPos);
-	candyPos[2] -= 1000;
+	candyPos[2] -= 6000;
 	ptpMove(candyPos);
 	this->setPump(false);
 	ptpMove(targetPos);
@@ -247,13 +270,9 @@ bool Gantry::catchStatic(uunit candyPos[NUM_AMP], uunit targetPos[NUM_AMP])
 *
 *@param target psoition as array x,y,z
 */
-void Gantry::ptpMove(uunit const targetPos[NUM_AMP])
+void Gantry::ptpMove(Point<3> targetPos)
 {
-	for (int i = 0; i < NUM_AMP; i++)
-	{
-		ampTargetPos[i] = targetPos[i];
-	}
-	err = this->link.MoveTo(ampTargetPos);
+	err = this->link.MoveTo(targetPos);
 	showerr(err, "Starting move");
 	err = this->link.WaitMoveDone(20000);
 	showerr(err, "Waiting for move to finish");
@@ -266,6 +285,7 @@ uunit* Gantry::getPos()
 	{
 		link[i].GetPositionActual(actPos[i]);
 	}
+	std::cout << actPos[0] << ", " << actPos[1] << ", " << actPos[2] << "ActPos" << std::endl;
 	return actPos;
 }
 
