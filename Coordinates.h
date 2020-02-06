@@ -23,6 +23,8 @@ class Coordinates {
         void fromPolar(double r, double phi);
         // difference in angle between two coordinates
         double calculateStep(Coordinates nextValue); 
+        // rotates the coordinate by x-degrees
+        Coordinates rotate(int degree);
         // getter for radius
         double getR() {
             return r;

@@ -13,12 +13,13 @@
  * @param camera the source of the video
  * @param colorTracker a vector of all available colors
  */
-Tracker::Tracker(int centerX, int centerY, int outerRadius, int innerRadius, Camera camera, std::vector<ColorTracker> colorTrackers) {
+Tracker::Tracker(int centerX, int centerY, int outerRadius, int innerRadius, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile) {
     this->centerX = centerX;
     this->centerY = centerY;
     this->outerRadius = outerRadius;
     this->innerRadius = innerRadius;
     this->camera = camera;
+    this->classifier = cv::CascadeClassifier(cascadeFile);
 }
 
 /**
@@ -28,13 +29,14 @@ Tracker::Tracker(int centerX, int centerY, int outerRadius, int innerRadius, Cam
  * @param camera the source of the video
  * @param colorTracker a vector of all available colors
  */
-Tracker::Tracker(json11::Json json, Camera camera, std::vector<ColorTracker> colorTrackers) {
+Tracker::Tracker(json11::Json json, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile) {
     this->centerX = json["centerX"].int_value();
     this->centerY = json["centerY"].int_value();
     this->outerRadius = json["outerRadius"].int_value();
     this->innerRadius = json["innerRadius"].int_value();
     this->camera = camera;
     this->colorTrackers = colorTrackers;
+    this->classifier = cv::CascadeClassifier(cascadeFile);
 }
 
 /**
@@ -46,6 +48,7 @@ Tracker::Tracker() {
     this->outerRadius = 0;
     this->innerRadius = 0;
     this->camera = (Camera) NULL;
+    this->classifier = cv::CascadeClassifier();
 }
 
 /**
@@ -59,7 +62,7 @@ cv::Mat Tracker::pipeline(cv::Mat image) {
     cv::Mat cpyImage = image.clone();
     cv::Point imageCenter(centerX, centerY);
 
-    cv::Mat blurredImage;
+    //cv::Mat blurredImage;
     //cv::GaussianBlur(cpyImage, blurredImage, cv::Size(3, 3), 1);
     cv::Mat croppedImage = circleROI(cpyImage, imageCenter, innerRadius, false);
     croppedImage = circleROI(croppedImage, imageCenter, outerRadius, true);
@@ -80,93 +83,6 @@ cv::Mat Tracker::getTreshedImage(Colors color, cv::Mat image) {
     ColorTracker colorTracker = colorTrackers.at(color);
     cv::Mat colorSpace = colorTracker.getColorSpace(cpyImage);
     return colorSpace;
-}
-
-/**
- * tracks all candies of the given color in the given frame
- *
- * @param color the given color
- * @param image the given image
- *
- * @retrun a vector of all tracked candies
- */
-std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image) {
-    std::vector<Candy> detectedCandies;
-
-    cv::Mat imgCopy = image.clone();
-    
-    cv::Mat colorSpace = removeWhitePixels(imgCopy);
-    cv::Mat pipedImage = pipeline(colorSpace);
-    cv::Mat smoothedImage = smoothImage(pipedImage);
-    bitwise_not(smoothedImage, smoothedImage);
-
-    std::vector<std::vector<cv::Point>> contours;
-    cv::findContours(smoothedImage, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-    
-
-    std::vector<std::vector<cv::Point>> singles;
-    std::vector<std::vector<cv::Point>> doubles;
-    std::vector<std::vector<cv::Point>> triples;
-
-    int singleCounter = 0;
-    int doubleCounter = 0;
-    int tripleCounter = 0;
-
-    std::vector<cv::Moments> allMoments(contours.size());
-    for (int i = 0; i < contours.size(); i++) {
-        double area = cv::contourArea(contours[i]);
-        double arcLength = 0.01 * cv::arcLength(contours[i], true);
-        if (contours[i].size() > 10) {
-            if (area < 12000 && area > 4000) {
-                singles.resize(singles.size() + 1);
-                cv::approxPolyDP(contours[i], singles[singleCounter++], arcLength, true);
-                
-            }
-            else if (area < 22000) {
-                doubles.resize(doubles.size() + 1);
-                cv::approxPolyDP(contours[i], doubles[doubleCounter++], arcLength, true);
-            }
-            else if (area > 22000) {
-                triples.resize(triples.size() + 1);
-                cv::approxPolyDP(contours[i], triples[tripleCounter++], arcLength, true);
-            }
-        }
-    }
-
-    //cv::Mat res = image.clone();
-    for (int i = 0; i < singleCounter; i++) {
-        cv::Mat mask = cv::Mat::zeros(1080, 1080, CV_8UC3);
-        cv::Mat maskedImage(1080, 1080, CV_8UC3, cv::Scalar(255, 255, 255));
-        cv::drawContours(mask, singles, i, cv::Scalar(255, 255, 255), -1);
-        imgCopy.copyTo(maskedImage, mask);
-
-        Colors detectedColor = detectColorOfCandy(maskedImage);
-        
-        if (color == detectedColor) {
-            cv::Point2f candyCenter;
-
-            for (int j = 0; j < singles[i].size(); j++) {              
-                float radius;
-                cv::minEnclosingCircle(singles[i], candyCenter, radius);
-                //cv::circle(res, cv::Point(singles[i][j].x, singles[i][j].y), 5, cv::Scalar(0, 0, 255), -1);
-            }
-
-            //cv::circle(res, candyCenter, 5, cv::Scalar(0, 255, 255), -1);
-
-            Coordinates center(candyCenter.x -  centerX, candyCenter.y - centerY);
-            detectedCandies.push_back(Candy(detectedColor, center));
-        }
-    }
-
-    /*
-    for (int i = 0; i < detectedCandies.size(); i++) {
-        res = markCandyInFrame(detectedCandies[i], res);
-    }
-
-    cv::imshow("res", res);
-    cv::waitKey(0);
-    */
-    return detectedCandies;
 }
 
 /**
@@ -223,62 +139,8 @@ cv::Mat Tracker::markCandyInFrame(Candy candy, cv::Mat image) {
     cv::Point size(50, 50);
 
     cv::rectangle(image, kartCor - size, kartCor + size, cv::Scalar(0, 0, 255), 10);
-    cv::putText(image, std::to_string(candy.getColor()), kartCor - cv::Point(60, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 3, 8);
+    cv::putText(image, std::to_string(candy.getColor()), kartCor - cv::Point(60, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 3, 8);
     return image;
-}
-
-/**
- * tracks a candy of the given color for x frames and returns it with adjusted angular velocity
- *
- * @param color the given color
- * @param frames the amount of frames the candy should be tracked for
- *
- * @return candy object with adjusted angular velocity
- */
-Candy Tracker::getCandyOfColor(Colors color, int frames) {
-
-	cv::Mat initialFrame = camera.grab(true);
-
-    std::vector<Candy> detectedCandies = getCandiesInFrame(color, initialFrame);
-    if (detectedCandies.size() == 0) {
-        throw NoCandyException();
-    }
-    Candy detectedCandy = detectedCandies.front();
-    for (int i = 0; i < frames; i++) {
-		cv::Mat currentImage = camera.grab(true);
-        std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
-        std::vector<Candy> currentFrameDetectedCandies = getCandiesInFrame(color, currentImage);
-		
-        for (int k = 0; k < currentFrameDetectedCandies.size(); k++) {
-            if (detectedCandy.isSameObject(currentFrameDetectedCandies[k])) {
-                std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-                int neededTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-                detectedCandy.updateValues(currentFrameDetectedCandies[k].getCurrentPosition(), neededTime, 1.0 / frames);
-                break;
-            }
-        }
-
-        //cv::imshow("test", markCandyInFrame(detectedCandy, currentImage));
-        //cv::waitKey(2);
-        
-          
-       // currentImage = markCandyInFrame(detectedCandy, currentImage);
-		/*
-        Coordinates predictedPosition = detectedCandy.predictPosition(10);
-
-        cv::Point predictPositionPoint(predictedPosition.getX() + centerX, predictedPosition.getY() + centerY);
-
-        cv::circle(currentImage, predictPositionPoint, 20, cv::Scalar(255, 0, 0));
-		*/
-      //  cv::imshow("asd", getTreshedImage(color, currentImage));
-		//cv::waitKey(0);
-        //cv::imshow("asd", currentImage); 
-
-
-
-    }
-
-    return detectedCandy;
 }
 
 /**
@@ -292,6 +154,8 @@ void Tracker::configure() {
 
     cv::createTrackbar("Center X", "Control", &centerX, 1080);
     cv::createTrackbar("Center Y", "Control", &centerY, 1080);
+    cv::createTrackbar("inner radius", "Control", &innerRadius, 1080);
+    cv::createTrackbar("outer radius", "Control", &outerRadius, 1080);
 
     while (true) {
         cpyImage = camera.grab(true);
@@ -321,3 +185,90 @@ json11::Json Tracker::to_json() const {
     };
     return outputJson;
 }
+
+/**
+ * tracks all candies of the given color in the given frame
+ *
+ * @param color the given color
+ * @param image the given image
+ *
+ * @retrun a vector of all tracked candies
+ */
+std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int rotationAngle) {
+    std::vector<Candy> detectedCandies;
+
+    cv::Mat initialFrame = pipeline(image);
+
+    cv::Mat resized;
+    cv::resize(initialFrame, resized, cv::Size(200, 200));
+
+    cv::Mat gray;
+    cv::cvtColor(resized, gray, cv::COLOR_BGR2GRAY);
+
+    cv::Mat blurred;
+    cv::GaussianBlur(gray, blurred, cv::Size(3, 3), -1);
+    
+    cv::Mat cl1;
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(2.0, cv::Size(8, 8));
+    clahe->apply(blurred, cl1);
+    
+    std::vector<cv::Rect> candies;
+    classifier.detectMultiScale(cl1, candies, 50, 1);
+
+    double factor = 1080 / 200.0;
+
+    for (int i = 0; i < candies.size(); i++) {
+        cv::Rect boundingBox(candies[i].x * factor, candies[i].y * factor, candies[i].height * factor, candies[i].width * factor);
+
+        Colors detectedColor = detectColorOfCandy(initialFrame(boundingBox));
+        if (detectedColor == color || color == ANY) {
+            Coordinates center(boundingBox.x + (boundingBox.width / 2) - centerX, boundingBox.y + (boundingBox.height / 2) - centerY);
+            Coordinates reRotatedCenter = center.rotate(-rotationAngle);
+            Candy candy(detectedColor, reRotatedCenter);
+            detectedCandies.push_back(candy);            
+        }
+    }
+    /*
+    cv::imshow("output", image);
+    cv::waitKey(0);
+    */
+
+
+    return detectedCandies;
+}
+
+Candy Tracker::getCandyOfColor(Colors color) {
+    cv::Mat initialFrame = pipeline(camera.grab(true));
+
+    std::vector<Candy> candies = getCandiesInFrame(color, initialFrame);
+    int angle = 0;
+    cv::Mat rotatedImage;
+    while (candies.size() == 0) {
+        angle += 5;
+        cv::Point rotationCenter(centerX, centerY);
+        cv::Mat rotationMatrix = cv::getRotationMatrix2D(rotationCenter, angle, 1.0);
+            
+        cv::warpAffine(initialFrame, rotatedImage, rotationMatrix, initialFrame.size());
+
+        candies = getCandiesInFrame(color, rotatedImage, -angle);
+    }
+    return candies.front();
+}
+
+void Tracker::autoConfigure() {
+    for (int i = 0; i < colorTrackers.size(); i++) {
+        std::cout << "Place only " << colorTrackers[i].getName() << " on the plate" << std::endl;
+        system("pause");
+        cv::Mat initialFrame = camera.grab(true);
+        Candy candy = getCandyOfColor(ANY);
+        cv::Point center(candy.getCurrentPosition().getX() + centerX, candy.getCurrentPosition().getY() + centerY);
+        cv::Rect box(center.x - 50, center.y - 50, 100, 100);
+        cv::Mat roi(initialFrame(box));
+        cv::Scalar meanColor = cv::mean(roi);
+
+        colorTrackers[i].setBlue(meanColor[0]);
+        colorTrackers[i].setGreen(meanColor[1]);
+        colorTrackers[i].setRed(meanColor[2]);
+    }
+}
+

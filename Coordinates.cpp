@@ -76,3 +76,11 @@ double Coordinates::calculateStep(Coordinates nextValue) {
 
     return value;
 }
+
+Coordinates Coordinates::rotate(int degree) {
+    double angleInRadians = degree * M_PI / 180;
+    int rotatedX = cos(angleInRadians) * x - sin(angleInRadians) * y;
+    int rotatedY = sin(angleInRadians) * x + cos(angleInRadians) * y;
+
+    return Coordinates(rotatedX, rotatedY);
+}

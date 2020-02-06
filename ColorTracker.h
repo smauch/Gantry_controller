@@ -53,6 +53,24 @@ class ColorTracker {
         // getter for maxSize
         int getMaxSize() { return maxSize; }
 
+        // getter name
+        std::string getName() {
+            return name;
+        }
+
+        // setter blue
+        void setBlue(int blue) {
+            this->blue = blue;
+        }
+        // setter green
+        void setGreen(int green) {
+            this->green = green;
+        }
+        // setter red
+        void setRed(int red) {
+            this->red = red;
+        }
+
         // gets the colorspace specified by the tracker 
         cv::Mat getColorSpace(cv::Mat image);
         // lets the user configure the tracker
@@ -61,5 +79,6 @@ class ColorTracker {
         json11::Json to_json() const;
         // creates a vector of ColorTrackers from a single json file
         static std::vector<ColorTracker> getColorTrackersFromJson(std::string filepath);
+
 };
 #endif

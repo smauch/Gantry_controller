@@ -142,9 +142,6 @@ void ColorTracker::configure(Camera camera) {
     
 
     while (true) {
-        if (mode == 0) {
-
-        }
         cv::Mat image = camera.grab(true);
         cv::GaussianBlur(image, image, cv::Size(5, 5), 2);
 

@@ -7,6 +7,7 @@ enum Colors {GREEN,
     DARK_BLUE,
     YELLOW,
     BROWN,
-    LIGHT_BLUE};
+    LIGHT_BLUE,
+    ANY};
 
 #endif
