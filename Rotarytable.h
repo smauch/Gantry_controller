@@ -36,6 +36,7 @@ public:
 	void startMovement(void);
 	void stopMovement(void);
 	void updateVelocity(BOOL upvelocity);
+	void rotateRel(BOOL angular);
 	double getAngVelocity();
 	bool isMoving(void);
 
@@ -71,6 +72,7 @@ DWORD m_code;
 SHORT m_res_4;
 
 BOOL m_vel;
+BOOL m_increm;
 DWORD m_txlen;
 BYTE* m_txdata;
 BOOL m_buffer;
