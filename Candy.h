@@ -2,6 +2,10 @@
 #define CANDY_H
 #include "Color.h"
 #include "Coordinates.h"
+#include <math.h>
+#include <cmath>
+#include <iostream>
+#define _USE_MATH_DEFINES
 /**
  * this class models a single piece of candy
  */
@@ -17,23 +21,19 @@ class Candy {
 
     public:
         // constructors
-        Candy(Colors iColor, Coordinates iCurrentPosition);
+        Candy(Colors color, Coordinates currentPosition);
         Candy();
 
-        // updates the attributes
-        void updateValues(Coordinates newPosition, int neededTime, double stepSize);
-        
-        // checks if two candies are the same
-        bool isSameObject(Candy otherObject);
-
         // getter currentPosition
-        Coordinates getCurrentPosition() { return currentPosition; }
+        Coordinates getCurrentPosition() { return this->currentPosition; }
+       
         // getter angularVelocity
-        double getAngularVelocity() { return angularVelocity; }
+        double getAngularVelocity() { return this->angularVelocity; }
         // getter color
-        Colors getColor() { return color; }
-        // predicts the position in X frames
-        Coordinates predictPosition(int frames);
+        Colors getColor() { return this->color; }
+
+        // setter currentPosition
+        void setCurrentPosition(Coordinates currentPosition) { this->currentPosition = currentPosition; }
 };
 
 #endif

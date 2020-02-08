@@ -47,6 +47,7 @@ cv::Mat Camera::grab(bool singleFrame) {
 		
 	cv::Mat output;
     if (ptrGrabResult -> GrabSucceeded()) {
+        // this part is for converting the image to an opencv matrix
 		Pylon::CImageFormatConverter formatConverter;
 		Pylon::CPylonImage pylonImage;
 		formatConverter.OutputPixelFormat = Pylon::EPixelType::PixelType_BGR8packed;

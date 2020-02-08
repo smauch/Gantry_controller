@@ -59,24 +59,11 @@ void Coordinates::fromPolar(double r, double phi) {
 }
 
 /**
- * calculates the difference in angle between two coordinates
- *
- * @param nextValue the other coordinate
- * @return the difference in angle
+ * returns this coordinate rotated by the given angle
+ * 
+ * @param degree given angle in degree
+ * @return copy of the coordinate rotated by the given angle
  */
-double Coordinates::calculateStep(Coordinates nextValue) {
-    double nextAngle = nextValue.getAngle();
-    double value = nextAngle - phi;
-
-    if (value > M_PI) {
-        value -= (2 * M_PI);
-    } else if (value < (M_PI * -1)) {
-        value += (2 * M_PI);
-    }
-
-    return value;
-}
-
 Coordinates Coordinates::rotate(int degree) {
     double angleInRadians = degree * M_PI / 180;
     int rotatedX = cos(angleInRadians) * x - sin(angleInRadians) * y;

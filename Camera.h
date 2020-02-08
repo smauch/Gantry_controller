@@ -20,20 +20,18 @@ class Camera {
 	private:
         // the camera object
         Pylon::CInstantCamera* camera;
-        
 
    public:
         // constructor
         Camera();
         Camera(Pylon::CInstantCamera *baslerCamera);
+
         // configures the camera with the given config file
         void configure(const char filename[]);
+
         // grabs either one image or multiple
         cv::Mat grab(bool singleFrame=false);
-		// prints information about the camera
-        void print() {
-			std::cout << camera->GetDeviceInfo().GetModelName() << std::endl;
-		}
+
         // getter camera
 		Pylon::CInstantCamera* getCamera() { return camera; }
         

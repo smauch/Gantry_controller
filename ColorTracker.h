@@ -3,8 +3,9 @@
 
 #include "opencv2/opencv.hpp"
 #include "json11.hpp"
-#include <string>
 #include "Camera.h"
+#include <string>
+#include <fstream>
 
 /**
  * this class models a color tracker for one color
@@ -14,67 +15,55 @@ class ColorTracker {
         /** name of the color **/
         std::string name;
 
-        /** value for blue or hue **/
+        /** value for blue **/
         int blue;
-        /** value for green or saturation **/
+        /** value for green **/
         int green;
-        /** value for red or value **/
+        /** value for red **/
         int red;
 
-        /** value for blue or hue **/
+        /** value for hue **/
         int hue;
-        /** value for green or saturation **/
+        /** value for saturation **/
         int saturation;
-        /** value for red or value **/
+        /** value for value **/
         int value;
-
-        /** tolerance of the tracker **/
-        int tolerance;
-
-        /** minimum size of a tracked object **/
-        int minSize = 1000;
-
-        /** maximum size of tracked object **/
-        int maxSize = 1000;
-
-        /** what color representation is used **/
-        int mode = 0; //0 = hsv, 1 = bgr, 2 = both
 
 
     public:
         // constructor
-        ColorTracker(std::string name, int blue, int green, int red, int hue, int saturation, int value, int tolerance, int minSize, int maxSize, int mode);
+        ColorTracker(std::string name, int blue, int green, int red, int hue, int saturation, int value);
         ColorTracker();
         ColorTracker(json11::Json json);
 
-        // getter for minSize
-        int getMinSize() { return minSize; }
-
-        // getter for maxSize
-        int getMaxSize() { return maxSize; }
-
         // getter name
-        std::string getName() {
-            return name;
-        }
+        std::string getName() { return name; }
+        // getter blue
+        int getBlue() { return this->blue; }
+        // getter green
+        int getGreen() { return this->green; }
+        // getter red
+        int getRed() { return this->red; }
+        // gettter hue
+        int getHue() { return this->hue; }
+        // getter saturation
+        int getSaturation() { return this->saturation; }
+        // getter value
+        int getValue() { return this->value; }
 
         // setter blue
-        void setBlue(int blue) {
-            this->blue = blue;
-        }
+        void setBlue(int blue) { this->blue = blue; }
         // setter green
-        void setGreen(int green) {
-            this->green = green;
-        }
+        void setGreen(int green) { this->green = green; }
         // setter red
-        void setRed(int red) {
-            this->red = red;
-        }
+        void setRed(int red) { this->red = red; }
+        // setter hue
+        void setHue(int hue) { this->hue = hue; }
+        // setter saturation
+        void setSaturation(int saturation) { this->saturation = saturation; }
+        // setter value
+        void setValue(int value) { this->value = value; }
 
-        // gets the colorspace specified by the tracker 
-        cv::Mat getColorSpace(cv::Mat image);
-        // lets the user configure the tracker
-        void configure(Camera camera);
         // converts the class to a json object
         json11::Json to_json() const;
         // creates a vector of ColorTrackers from a single json file

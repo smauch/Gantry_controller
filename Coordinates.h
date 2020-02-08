@@ -2,7 +2,6 @@
 #define COORDINATES_H
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include <iostream>
 
 class Coordinates {
     private:
@@ -21,25 +20,15 @@ class Coordinates {
         void fromCartesian(double x, double y);
         // set from polar coordinates
         void fromPolar(double r, double phi);
-        // difference in angle between two coordinates
-        double calculateStep(Coordinates nextValue); 
         // rotates the coordinate by x-degrees
         Coordinates rotate(int degree);
         // getter for radius
-        double getR() {
-            return r;
-        };
+        double getR() { return r; };
         // getter for phi
-        double getAngle() {
-            return phi;
-        };
+        double getAngle() { return phi; };
         // getter for x
-        double getX() {
-            return x;
-        };
+        double getX() { return x; };
         // getter for y
-        double getY() {
-            return y;
-        };
+        double getY() { return y; };
 };
 #endif

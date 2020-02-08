@@ -1,7 +1,6 @@
-#include <vector>
-#include <chrono>
+
 #include "Tracker.h"
-#include "imageStuff.h"
+
 
 /**
  * constructor of tracker
@@ -12,6 +11,7 @@
  * @param innerRadius radius of the inner mounting thingy
  * @param camera the source of the video
  * @param colorTracker a vector of all available colors
+ * @param cascadeFile path to the xml file containing the weights for the classifier
  */
 Tracker::Tracker(int centerX, int centerY, int outerRadius, int innerRadius, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile) {
     this->centerX = centerX;
@@ -71,50 +71,32 @@ cv::Mat Tracker::pipeline(cv::Mat image) {
 }
 
 /**
- * gets an image in the specified color space
+ * detects the color of a single candy in a picture 
  *
- * @param color the given color
  * @param image the given image
- *
- * retrun the treshed image
+ * @return the color of the given candy
  */
-cv::Mat Tracker::getTreshedImage(Colors color, cv::Mat image) {
-    cv::Mat cpyImage = image.clone();
-    ColorTracker colorTracker = colorTrackers.at(color);
-    cv::Mat colorSpace = colorTracker.getColorSpace(cpyImage);
-    return colorSpace;
-}
+Colors Tracker::detectColorOfCandy(cv::Mat image)  {
+    Colors bestColor = ANY;
+    double lowestValue = pow(255, 3);
 
-/**
- * detects the color of a single candy in the given frame
- *
- * @param image the given frame
- * @return the color of the candy in the frame
- */
-Colors Tracker::detectColorOfCandy(cv::Mat image) {
-    Colors bestColor;
-    double highestValue = 0;
+    cv::Scalar bgrMean = cv::mean(image);
+    cv::Mat imageHsv;
+    cv::cvtColor(image, imageHsv, cv::COLOR_BGR2HSV);
+    cv::Scalar meanHsv = cv::mean(imageHsv);
 
+    // finding the color with the smallest error
     for (int i = 0; i < colorTrackers.size(); i++) {
-        Colors currentColor = static_cast<Colors>(i);       
+        double squaredError = pow(bgrMean[0] - colorTrackers[i].getBlue(), 2)
+            + pow(bgrMean[1] - colorTrackers[i].getGreen(), 2)
+            + pow(bgrMean[2] - colorTrackers[i].getRed(), 2)
+            + pow(meanHsv[0] - colorTrackers[i].getHue(), 2)
+            + pow(meanHsv[1] - colorTrackers[i].getSaturation(), 2)
+            + pow(meanHsv[2] - colorTrackers[i].getValue(), 2);
 
-        cv::Mat colorSpace = getTreshedImage(currentColor, image);
-
-        std::vector<std::vector<cv::Point>> contours;
-
-        cv::findContours(colorSpace, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-        std::vector<cv::Moments> allMoments(contours.size());
-        for (int j = 0; j < contours.size(); j++) {
-            allMoments[j] = cv::moments(contours[j], false);
-        }   
-
-        for (int j = 0; j < contours.size(); j++) {
-            if ((allMoments[j].m00 > highestValue) && (allMoments[j].m00 < colorTrackers[j].getMaxSize())) {
-                highestValue = allMoments[j].m00;
-
-                bestColor = static_cast<Colors>(i);
-            }
+        if (squaredError < lowestValue) {
+            lowestValue = squaredError;
+            bestColor = static_cast<Colors>(i);
         }
     }
 
@@ -199,6 +181,7 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int r
 
     cv::Mat initialFrame = pipeline(image);
 
+    // applying some preprocessing
     cv::Mat resized;
     cv::resize(initialFrame, resized, cv::Size(200, 200));
 
@@ -208,14 +191,17 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int r
     cv::Mat blurred;
     cv::GaussianBlur(gray, blurred, cv::Size(3, 3), -1);
     
+    // clahe for better contrast
     cv::Mat cl1;
     cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(2.0, cv::Size(8, 8));
     clahe->apply(blurred, cl1);
     
+
+    // detecting the candies using a haar cascade
     std::vector<cv::Rect> candies;
     classifier.detectMultiScale(cl1, candies, 50, 1);
 
-    double factor = 1080 / 200.0;
+    double factor = 1080 / 200.0; 
 
     for (int i = 0; i < candies.size(); i++) {
         cv::Rect boundingBox(candies[i].x * factor, candies[i].y * factor, candies[i].height * factor, candies[i].width * factor);
@@ -228,11 +214,6 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int r
             detectedCandies.push_back(candy);            
         }
     }
-    /*
-    cv::imshow("output", image);
-    cv::waitKey(0);
-    */
-
 
     return detectedCandies;
 }
@@ -241,9 +222,11 @@ Candy Tracker::getCandyOfColor(Colors color) {
     cv::Mat initialFrame = pipeline(camera.grab(true));
 
     std::vector<Candy> candies = getCandiesInFrame(color, initialFrame);
+    
+    // rotates the image so that the classifier has a better chance of detection
     int angle = 0;
     cv::Mat rotatedImage;
-    while (candies.size() == 0) {
+    while (candies.size() == 0 && angle < 360) {
         angle += 5;
         cv::Point rotationCenter(centerX, centerY);
         cv::Mat rotationMatrix = cv::getRotationMatrix2D(rotationCenter, angle, 1.0);
@@ -252,6 +235,10 @@ Candy Tracker::getCandyOfColor(Colors color) {
 
         candies = getCandiesInFrame(color, rotatedImage, -angle);
     }
+
+    if (candies.size() == 0) {
+        throw NoCandyException();
+    }
     return candies.front();
 }
 
@@ -259,16 +246,30 @@ void Tracker::autoConfigure() {
     for (int i = 0; i < colorTrackers.size(); i++) {
         std::cout << "Place only " << colorTrackers[i].getName() << " on the plate" << std::endl;
         system("pause");
-        cv::Mat initialFrame = camera.grab(true);
-        Candy candy = getCandyOfColor(ANY);
-        cv::Point center(candy.getCurrentPosition().getX() + centerX, candy.getCurrentPosition().getY() + centerY);
-        cv::Rect box(center.x - 50, center.y - 50, 100, 100);
-        cv::Mat roi(initialFrame(box));
-        cv::Scalar meanColor = cv::mean(roi);
+        cv::Scalar meanBgr(0.0, 0.0, 0.0);
+        cv::Scalar meanHsv(0.0, 0.0, 0.0); 
+        // tracks over a couple frames
+        for (int j = 0; j < 60; j++) {        
+            cv::Mat initialFrame = camera.grab(true);
+            Candy candy = getCandyOfColor(ANY);
+            cv::Point center(candy.getCurrentPosition().getX() + centerX, candy.getCurrentPosition().getY() + centerY);
+            cv::Rect box(center.x - 50, center.y - 50, 100, 100);
+            cv::Mat roi(initialFrame(box));
+            meanBgr = meanBgr + cv::mean(roi) / 60.0;
+            cv::Mat roiHsv;
+            cv::cvtColor(roi, roiHsv, cv::COLOR_BGR2HSV);
+            meanHsv = meanHsv + cv::mean(roiHsv) / 60.0;
+            std::cout << j << std::endl;
+        }
 
-        colorTrackers[i].setBlue(meanColor[0]);
-        colorTrackers[i].setGreen(meanColor[1]);
-        colorTrackers[i].setRed(meanColor[2]);
+        std::cout << meanBgr << std::endl;
+
+        colorTrackers[i].setBlue(meanBgr[0]);
+        colorTrackers[i].setGreen(meanBgr[1]);
+        colorTrackers[i].setRed(meanBgr[2]);
+        colorTrackers[i].setHue(meanHsv[0]);
+        colorTrackers[i].setSaturation(meanHsv[1]);
+        colorTrackers[i].setValue(meanHsv[2]);
     }
 }
 

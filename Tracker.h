@@ -14,6 +14,8 @@
 #include "Camera.h"
 #include "json11.hpp"
 #include <exception>
+#include "imageStuff.h"
+#include <chrono>
 
 // custom exception for when no candy was found
 struct NoCandyException : public std::exception {
@@ -44,16 +46,14 @@ class Tracker {
 
         // pipes the image 
         cv::Mat pipeline(cv::Mat image);
-        // gets colorspace of given color and image 
-        cv::Mat getTreshedImage(Colors color, cv::Mat image);
         // detects the color of a single candy in a picture
         Colors detectColorOfCandy(cv::Mat image);
 
 
     public:
         // constructor
-        Tracker(int iCenterX, int iCenterY, int iOuterRadius, int iInnerRadius, Camera camera, std::vector<ColorTracker> iColorTrackers, std::string cascadeFile);
-        Tracker(json11::Json json, Camera camera, std::vector<ColorTracker> iColorTrackers, std::string cascadeFile);
+        Tracker(int centerX, int centerY, int outerRadius, int innerRadius, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile);
+        Tracker(json11::Json json, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile);
         Tracker();
         // tracks all candies of the given color in the frame
         std::vector<Candy> getCandiesInFrame(Colors color, cv::Mat image, int rotationAngle = 0);
@@ -66,6 +66,9 @@ class Tracker {
         // saves some settings of the class
         json11::Json to_json() const;
         void autoConfigure();
+
+        // getter colorTrackers
+        std::vector<ColorTracker> getColorTrackers() { return this->colorTrackers; }
 };
 
 #endif
