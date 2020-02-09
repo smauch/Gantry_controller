@@ -33,7 +33,6 @@ public:
 	//Minimum radius and maximum radius of the disc
 	static uunit DISC_RADIUS[2];
 
-
 	//Constructor
 	Gantry();
 	~Gantry();
@@ -43,17 +42,20 @@ public:
 	//Moves to lurk position 
 	bool prepareCatch();
 	//Catch candy start at lurk position
-	bool catchRotary(double angularVel, double angular, double pixelRadius, Point<3> targetPos, bool measureTime=false);
+	bool catchRotary(double angularVel, double angular, double pixelRadius, uunit const targetPos[NUM_AMP], bool measureTime=false);
 
 	//Catches candy from none moving point
-	bool catchStatic (Point<3> candyPos, Point<3> targetPos);
+	bool catchStatic (uunit startPos[NUM_AMP], uunit endPos[NUM_AMP]);
 
 	//position to positiion Move in uunit
-	void ptpMove(Point<3> targetPos);
+	void ptpMove(uunit const targetPos[NUM_AMP]);
 	uunit* getPos();
 
-private:
+	bool fillTable(int color);
 
+
+private:
+	void showerr(const Error* err, const char* msg);
 	//Error obj to show error that are generated from CML
 	const Error* err;
 	//IXXAT USB to CAN adapter

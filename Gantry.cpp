@@ -1,46 +1,41 @@
 #include "Gantry.h"
-
+#include <map>
 #include <chrono>
 #include <thread>
 
 CML_NAMESPACE_USE();
 
 //Initialization of Fix points
-uunit Gantry::LURK_POS[Gantry::NUM_AMP] = { 138000, 0, 15000 };
+uunit Gantry::LURK_POS[Gantry::NUM_AMP] = { 138000, 0, 10000 };
 uunit Gantry::HOME_POS[Gantry::NUM_AMP] = { 0,0,0 };
-uunit Gantry::DROP_POS[Gantry::NUM_AMP] = { 0, 46350, 0 };
+uunit Gantry::DROP_POS[Gantry::NUM_AMP] = { 0, 46350, 10000 };
 uunit Gantry::DISC_CENTER_POS[Gantry::NUM_AMP] = { 110000, 46350, 20000 };
-uunit Gantry::CATCH_Z_HEIGHT = 25260;
+uunit Gantry::CATCH_Z_HEIGHT = 25250;
 uunit Gantry::DISC_RADIUS[2] = { 8000, 46350 };
+
+uunit X_STORAGE = 9100;
+std::map<int, uunit> Y_STORAGE = {{0, 69800}, {1, 77100}, {2,84600}};
+
 double const Gantry::PIXEL_RADIUS = 540.0;
-Point<3> lurk_pos;
-Point<3> home_pos;
-Point <3> drop_pos;
 
 
 
-static void showerr(const Error* err, const char* msg) {
-	if (!err) return;
-	printf("Error: %s - %s\n", msg, err->toString());
-	exit(1);
-};
+//static void showerr(const Error* err, const char* msg) {
+//	if (!err) return;
+//	
+//	printf("Error: %s - %s\n", msg, err->toString());
+//	//exit(1);
+//};
 
 Gantry::Gantry()
 {
-	for (int i = 0; i < NUM_AMP; i++)
-	{
-		home_pos[i] = HOME_POS[i];
-		lurk_pos[i] = LURK_POS[i];
-		drop_pos[i] = DROP_POS[i];
-
-	}
 
 }
 
 Gantry::~Gantry()
 {
 
-	ptpMove(home_pos);
+	ptpMove(HOME_POS);
 	for (int i = 0; i < NUM_AMP; i++)
 	{
 		err = this->link[i].Disable(true);
@@ -138,14 +133,13 @@ bool Gantry::initGantry()
 	for (short i = 0; i < NUM_AMP; i++)
 	{
 		this->link[i].SetHaltMode(HALT_QUICKSTOP);
-
 	}
 
 	//Movement limitations setup
 	ProfileConfig profConf;
 	err = amp[0].GetProfileConfig(profConf);
 	showerr(err, "Read Profile Config");
-	err = link.SetMoveLimits(profConf.vel, profConf.acc*0.75, profConf.dec*0.75, profConf.jrk*0.5);
+	err = link.SetMoveLimits(profConf.vel*0.75, profConf.acc*0.5, profConf.dec*0.5, profConf.jrk*0.5);
 	showerr(err, "Setting move limits");
 
 	angular = PI;
@@ -165,7 +159,7 @@ bool Gantry::initGantry()
 *@return true if the candy got chatched and is dropped at targePos
 */
 
-bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, Point<3> targetPos, bool measureTime )
+bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, uunit const targetPos[NUM_AMP], bool measureTime )
 {
 	//Time measurement to catch
 
@@ -185,18 +179,13 @@ bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, 
 
 
 	//Upload trajectory to buffer and start movement
-	uunit actPos[NUM_AMP];
-	for (short i = 0; i < NUM_AMP; i++)
-	{
-		link[i].GetPositionActual(actPos[i]);
-	}
-
-	trj.calcMovement(actPos, radius, angular, angularVel);
+	//trj.calcMovement(getPos(), radius, angular, angularVel, targetPos);
+	trj.calcMovement(Gantry::LURK_POS, radius, angular, angularVel, targetPos);
 	auto stop_clac = std::chrono::high_resolution_clock::now();
 	err = link.SendTrajectory(trj, false);
 	showerr(err, "Loading trajectory to Buffer");
 	this->setValve(false);
-	this->setPump(true);
+	//this->setPump(true);
 	err = link.StartMove();
 	showerr(err, "Starting trj in Buffer");
 	err = link.WaitMoveDone(60000);
@@ -214,30 +203,24 @@ bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, 
 		//driveback
 		this->setPump(false);
 		//Drive to Output
-		targetPos[2] -= 5000;
-		this->ptpMove(targetPos);
-		targetPos[2] += 5000;
 		this->ptpMove(targetPos);
 		this->setValve(true);
-		targetPos[2] -= 5000;
-		this->ptpMove(targetPos);
-		this->ptpMove(lurk_pos);
-
-		return true;
+		this->ptpMove(LURK_POS);
 	}
 	else
 	{
 		this->setPump(false);
-		this->ptpMove(lurk_pos);
+		//this->ptpMove(HOME_POS);
 		return false;
 	}
+	return false;
 }
 
 
 bool Gantry::prepareCatch()
 {
 	this->link.ClearLatchedError();
-	ptpMove(lurk_pos);
+	ptpMove(LURK_POS);
 	//Check Motor state
 	return false;
 }
@@ -248,15 +231,15 @@ bool Gantry::prepareCatch()
 *@param candyPos is the position of the candy in uunits
 *@param targetPos is the position where the candy should be dropped of
 */
-bool Gantry::catchStatic(Point<3> candyPos,Point<3> targetPos)
+bool Gantry::catchStatic(uunit candyPos[NUM_AMP], uunit targetPos[NUM_AMP])
 {
-	candyPos[2] -= 6000;
+	candyPos[2] -= 1000;
 	ptpMove(candyPos);
 	this->setValve(false);
 	this->setPump(true);
-	candyPos[2] += 6000;
+	candyPos[2] += 1000;
 	ptpMove(candyPos);
-	candyPos[2] -= 6000;
+	candyPos[2] -= 1000;
 	ptpMove(candyPos);
 	this->setPump(false);
 	ptpMove(targetPos);
@@ -270,9 +253,17 @@ bool Gantry::catchStatic(Point<3> candyPos,Point<3> targetPos)
 *
 *@param target psoition as array x,y,z
 */
-void Gantry::ptpMove(Point<3> targetPos)
+void Gantry::ptpMove(uunit const targetPos[NUM_AMP])
 {
-	err = this->link.MoveTo(targetPos);
+	for (int i = 0; i < NUM_AMP; i++)
+	{
+		err = this->link[i].ClearFaults();
+		showerr(err, "Faults not cleared");
+		ampTargetPos[i] = targetPos[i];
+	}
+	
+
+	err = this->link.MoveTo(ampTargetPos);
 	showerr(err, "Starting move");
 	err = this->link.WaitMoveDone(20000);
 	showerr(err, "Waiting for move to finish");
@@ -285,8 +276,55 @@ uunit* Gantry::getPos()
 	{
 		link[i].GetPositionActual(actPos[i]);
 	}
-	std::cout << actPos[0] << ", " << actPos[1] << ", " << actPos[2] << "ActPos" << std::endl;
 	return actPos;
+}
+
+bool Gantry::fillTable(int color)
+{
+	uunit target[3];
+	target[0] = X_STORAGE;
+	target[1] = Y_STORAGE[color];
+	target[2] = 18000;
+	ptpMove(target);
+	ProfileConfigTrap carefulCatch;
+	carefulCatch.acc = 5000;
+	carefulCatch.dec = 5000;
+	carefulCatch.vel = 5000;
+	carefulCatch.pos = CATCH_Z_HEIGHT;
+	this->link[2].SetupMove(carefulCatch);
+	this->link[2].SetPositionWarnWindow(80);
+	EventAny posWarn(AMPEVENT_POSWARN);
+	EventNone noWarn(AMPEVENT_POSWARN);
+	this->link[2].StartMove();
+	err = this->link[2].WaitEvent(posWarn, 3000);
+	if (!err) {
+		std::cout << "performing quickstop" << std::endl;
+		this->link[2].HaltMove();
+		this->link[2].SetPositionWarnWindow(4096);
+		this->setValve(false);
+		this->setPump(true);
+		ptpMove(target);
+		this->setPump(false);
+		ptpMove(DISC_CENTER_POS);
+		this->setValve(true);
+		return true;
+	}
+	else {
+		err = this->link.WaitMoveDone(10000);
+		this->link[2].SetPositionWarnWindow(4096);
+		showerr(err, "Waiting for move to finish");
+		std::cout << "empty" << std::endl;
+		ptpMove(target);
+		return false;
+	}	
+}
+
+void Gantry::showerr(const Error* err, const char* msg)
+{
+	if (!err) return;
+	printf("Error: %s - %s\n", msg, err->toString());
+	system("PAUSE");
+	exit(1);
 }
 
 

@@ -32,7 +32,8 @@ public:
 	virtual int GetDim(void);
 	virtual bool UseVelocityInfo(void);
 	virtual const Error* NextSegment(uunit pos[], uunit vel[], uint8& time);
-	bool calcMovement(uunit actPos[], double radius, double angular, double angularVelTarget);
+	bool calcMovement(uunit actPos[], double radius, double angular, double angularVelTarget, const uunit targetPos[]);
 	void circle(double radius, double angular, double angularVel);
+	void cubicSpline();
 };
 #endif
