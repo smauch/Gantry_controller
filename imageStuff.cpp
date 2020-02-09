@@ -23,7 +23,9 @@ cv::Mat circleROI(cv::Mat image, cv::Point center, int radius, bool inside) {
         mask = cv::Mat(image.size(), CV_8U, cv::Scalar(255));
         cv::circle(mask, center, radius, cv::Scalar(0), cv::FILLED);
     }
+
     cv::Mat res(image.size(), CV_8U, cv::Scalar(255));
     image.copyTo(res, mask);
+
     return res;
 }

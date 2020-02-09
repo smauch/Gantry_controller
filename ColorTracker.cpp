@@ -11,14 +11,11 @@
  * @param saturatiom value for saturation
  * @param value value for value
  */
-ColorTracker::ColorTracker(std::string name, int blue, int green, int red, int hue, int saturation, int value) {
+ColorTracker::ColorTracker(std::string name, int lightness, int aComponent, int bComponent) {
     this->name = name;
-    this->blue = blue;
-    this->green = green;
-    this->red = red;
-    this->hue = hue;
-    this->saturation = saturation;
-    this->value = value;
+    this->lightness = lightness;
+    this->aComponent = aComponent;
+    this->bComponent = bComponent;
 }
 
 /**
@@ -26,13 +23,9 @@ ColorTracker::ColorTracker(std::string name, int blue, int green, int red, int h
  */
 ColorTracker::ColorTracker() {
     this->name = "initialize me";
-    this->blue = 0;
-    this->green = 0;
-    this->red = 0;
-    this->hue = 0;
-    this->saturation = 0;
-    this->value = 0;
-
+    this->lightness = 0;
+    this->aComponent = 0;
+    this->bComponent = 0;
 }
 
 /**
@@ -41,12 +34,9 @@ ColorTracker::ColorTracker() {
  */
 ColorTracker::ColorTracker(json11::Json json) {
     this->name = json["name"].string_value();
-    this->blue = json["blue"].int_value();
-    this->green = json["green"].int_value();
-    this->red = json["red"].int_value();
-    this->hue = json["hue"].int_value();
-    this->saturation = json["saturation"].int_value();
-    this->value = json["value"].int_value();
+    this->lightness = json["lighntess"].int_value();
+    this->aComponent = json["aComponent"].int_value();
+    this->bComponent = json["bComponent"].int_value();
 }
 
 /**
@@ -57,17 +47,18 @@ ColorTracker::ColorTracker(json11::Json json) {
 std::vector<ColorTracker> ColorTracker::getColorTrackersFromJson(std::string filepath) {
     std::string line;
     std::ifstream jsonfile(filepath);
-    if (jsonfile.is_open()) {
+
+    if (jsonfile.is_open())
         std::getline(jsonfile, line);
-    }
+
     jsonfile.close();
+
     std::string err;
     json11::Json json = json11::Json::parse(line, err);
     std::vector<ColorTracker> colorTrackers;
 
-    for (json11::Json singleItem : json.array_items()) {
+    for (json11::Json singleItem : json.array_items())
         colorTrackers.push_back(ColorTracker(singleItem));
-    }
 
     return colorTrackers;
 }
@@ -80,12 +71,9 @@ std::vector<ColorTracker> ColorTracker::getColorTrackersFromJson(std::string fil
 json11::Json ColorTracker::to_json() const {
     json11::Json outputJson = json11::Json::object {
         { "name", this->name },
-            { "blue", this->blue},
-            { "green", this->green},
-            { "red", this->red},
-            { "hue", this->hue},
-            { "saturation", this->saturation},
-            { "value", this->value},
+            { "lightness", this->lightness},
+            { "aComponent", this->aComponent},
+            { "bComponent", this->bComponent}
     };
     return outputJson;
 }

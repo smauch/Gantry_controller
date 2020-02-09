@@ -64,8 +64,6 @@ class Tracker {
         cv::Mat markCandyInFrame(Candy candy, cv::Mat image); 
         // tracks a single candy of the given color and return it with adjusted angularVelocity
         Candy getCandyOfColor(Colors color, bool trackRotation = false);
-        // gives the user the option to adjust the values of the tracker
-        void configure();
         // saves some settings of the class
         json11::Json to_json() const;
         // configures the color-trackers

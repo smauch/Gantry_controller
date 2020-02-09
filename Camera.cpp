@@ -39,9 +39,8 @@ void Camera::configure(const char filename[]) {
 cv::Mat Camera::grab(bool singleFrame) {
 	Pylon::CGrabResultPtr ptrGrabResult;
 
-	if (singleFrame) {
-		camera->StartGrabbing(1);
-	}
+	if (singleFrame)
+        camera->StartGrabbing(1);
 
     camera->RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 		

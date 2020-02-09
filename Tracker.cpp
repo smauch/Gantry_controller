@@ -62,8 +62,6 @@ cv::Mat Tracker::pipeline(cv::Mat image) {
     cv::Mat cpyImage = image.clone();
     cv::Point imageCenter(centerX, centerY);
 
-    //cv::Mat blurredImage;
-    //cv::GaussianBlur(cpyImage, blurredImage, cv::Size(3, 3), 1);
     cv::Mat croppedImage = circleROI(cpyImage, imageCenter, innerRadius, false);
     croppedImage = circleROI(croppedImage, imageCenter, outerRadius, true);
 
@@ -80,19 +78,17 @@ Colors Tracker::detectColorOfCandy(cv::Mat image)  {
     Colors bestColor = ANY;
     double lowestValue = pow(255, 3);
 
-    cv::Scalar bgrMean = cv::mean(image);
-    cv::Mat imageHsv;
-    cv::cvtColor(image, imageHsv, cv::COLOR_BGR2HSV);
-    cv::Scalar meanHsv = cv::mean(imageHsv);
+    cv::Rect roi(20, 20, 60, 60);
+
+    cv::Mat imageLab;
+    cv::cvtColor(image(roi), imageLab, cv::COLOR_BGR2Lab);
+    cv::Scalar meanLab = cv::mean(imageLab);
 
     // finding the color with the smallest error
     for (int i = 0; i < colorTrackers.size(); i++) {
-        double squaredError = pow(bgrMean[0] - colorTrackers[i].getBlue(), 2)
-            + pow(bgrMean[1] - colorTrackers[i].getGreen(), 2)
-            + pow(bgrMean[2] - colorTrackers[i].getRed(), 2)
-            + pow(meanHsv[0] - colorTrackers[i].getHue(), 2)
-            + pow(meanHsv[1] - colorTrackers[i].getSaturation(), 2)
-            + pow(meanHsv[2] - colorTrackers[i].getValue(), 2);
+        double squaredError = pow(meanLab[1] - colorTrackers[i].getAComponent(), 2)
+            + pow(meanLab[2] - colorTrackers[i].getBComponent(), 2);
+
 
         if (squaredError < lowestValue) {
             lowestValue = squaredError;
@@ -127,34 +123,6 @@ cv::Mat Tracker::markCandyInFrame(Candy candy, cv::Mat image) {
 }
 
 /**
- * gives the user the ability to adjust the values of the tracker
- *
- * @param image a test image
- */
-void Tracker::configure() {
-    cv::Mat cpyImage = camera.grab(true);
-    cv::namedWindow("Control", cv::WINDOW_AUTOSIZE);
-
-    cv::createTrackbar("Center X", "Control", &centerX, 1080);
-    cv::createTrackbar("Center Y", "Control", &centerY, 1080);
-    cv::createTrackbar("inner radius", "Control", &innerRadius, 1080);
-    cv::createTrackbar("outer radius", "Control", &outerRadius, 1080);
-
-    while (true) {
-        cpyImage = camera.grab(true);
-        cv::Point imageCenter(centerX, centerY);
-        cv::Mat croppedImage = circleROI(cpyImage, imageCenter, 5, false);
-        croppedImage = circleROI(croppedImage, imageCenter, outerRadius, true);
-        cv::imshow("Control", croppedImage);
-
-        if (cv::waitKey(1) == 27) {
-            cv::destroyWindow("Control");
-            break;
-        }
-    }
-}
-
-/**
  * saves some settings of the class
  *
  * @return a json object
@@ -183,7 +151,7 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int r
     std::vector<Candy> detectedCandies;
 
     cv::Mat initialFrame = pipeline(image);
-
+    
     // applying some preprocessing
     cv::Mat resized;
     cv::resize(initialFrame, resized, cv::Size(200, 200));
@@ -198,7 +166,6 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int r
     cv::Mat cl1;
     cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(2.0, cv::Size(8, 8));
     clahe->apply(blurred, cl1);
-    
 
     // detecting the candies using a haar cascade
     std::vector<cv::Rect> candies;
@@ -217,7 +184,10 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int r
 
             if (trackRotation) {
                 double angle = detectAngle(initialFrame(boundingBox));
-                candy.setRotationAngle(angle - rotationAngle);
+                double reRotatedAngle = static_cast<int>(angle) + rotationAngle;
+                if (reRotatedAngle > 90)
+                    reRotatedAngle -= 180;
+                candy.setRotationAngle(reRotatedAngle);
             }
 
             detectedCandies.push_back(candy);
@@ -253,9 +223,9 @@ Candy Tracker::getCandyOfColor(Colors color, bool trackRotation) {
         candies = getCandiesInFrame(color, rotatedImage, -angle, trackRotation);
     }
 
-    if (candies.size() == 0) {
+    if (candies.size() == 0)
         throw NoCandyException();
-    }
+
     return candies.front();
 }
 
@@ -266,30 +236,30 @@ void Tracker::autoConfigure() {
     for (int i = 0; i < colorTrackers.size(); i++) {
         std::cout << "Place only " << colorTrackers[i].getName() << " on the plate" << std::endl;
         system("pause");
-        cv::Scalar meanBgr(0.0, 0.0, 0.0);
-        cv::Scalar meanHsv(0.0, 0.0, 0.0); 
+        cv::Scalar meanLab(0.0, 0.0, 0.0);
+
         // tracks over a couple frames
-        for (int j = 0; j < 60; j++) {        
+        for (int j = 0; j < 60; j++) {       
             cv::Mat initialFrame = camera.grab(true);
             Candy candy = getCandyOfColor(ANY, false);
+            
             cv::Point center(candy.getCurrentPosition().getX() + centerX, candy.getCurrentPosition().getY() + centerY);
-            cv::Rect box(center.x - 50, center.y - 50, 100, 100);
+            cv::Rect box(center.x - 30, center.y - 30, 60, 60);
+
             cv::Mat roi(initialFrame(box));
-            meanBgr = meanBgr + cv::mean(roi) / 60.0;
-            cv::Mat roiHsv;
-            cv::cvtColor(roi, roiHsv, cv::COLOR_BGR2HSV);
-            meanHsv = meanHsv + cv::mean(roiHsv) / 60.0;
+
+            cv::Mat roiLab;
+
+            cv::cvtColor(roi, roiLab, cv::COLOR_BGR2Lab);
+            meanLab = meanLab + cv::mean(roiLab) / 60.0;
             std::cout << j << std::endl;
         }
 
-        std::cout << meanBgr << std::endl;
+        std::cout << meanLab << std::endl;
 
-        colorTrackers[i].setBlue(meanBgr[0]);
-        colorTrackers[i].setGreen(meanBgr[1]);
-        colorTrackers[i].setRed(meanBgr[2]);
-        colorTrackers[i].setHue(meanHsv[0]);
-        colorTrackers[i].setSaturation(meanHsv[1]);
-        colorTrackers[i].setValue(meanHsv[2]);
+        colorTrackers[i].setLightness(meanLab[0]);
+        colorTrackers[i].setAComponent(meanLab[1]);
+        colorTrackers[i].setBComponent(meanLab[2]);
     }
 }
 
@@ -307,6 +277,8 @@ double Tracker::detectAngle(cv::Mat image) {
     int minLineLength = 0;
     int maxLineGap = 20;
 
+    cv::namedWindow("asd", cv::WINDOW_NORMAL);
+
     cv::Mat blurred;
     cv::GaussianBlur(image, blurred, cv::Size(9, 9), 0, 0);
 
@@ -322,11 +294,19 @@ double Tracker::detectAngle(cv::Mat image) {
         double lineLength = sqrt(pow(lines[i][0] - lines[i][2], 2)
             + pow(lines[i][1] - lines[i][3], 2));
 
+        cv::line(image, cv::Point(lines[i][0], lines[i][1]), cv::Point(lines[i][2], lines[i][3]), cv::Scalar(255, 0, 255), 3);
+
+        
+
         if (lineLength > length) {
             length = lineLength;
             longestLine = lines[i];
         }
     }
+
+    cv::line(image, cv::Point(longestLine[0], longestLine[1]), cv::Point(longestLine[2], longestLine[3]), cv::Scalar(255, 255, 0));
+
+    
 
     double angleInDegrees = 100;
     if (length != 0) {
@@ -335,7 +315,13 @@ double Tracker::detectAngle(cv::Mat image) {
 
         if ((longestLine[3] - longestLine[1]) > 0)
             angleInDegrees *= -1;
+
+        std::cout << angleInDegrees << std::endl;
     }
-    
+    /*
+    cv::imshow("asd", image);
+    cv::waitKey(0);
+    cv::destroyAllWindows();
+    */
     return angleInDegrees;
 }

@@ -30,7 +30,7 @@ class Camera {
         void configure(const char filename[]);
 
         // grabs either one image or multiple
-        cv::Mat grab(bool singleFrame=false);
+        cv::Mat grab(bool singleFrame=true);
 
         // getter camera
 		Pylon::CInstantCamera* getCamera() { return camera; }
