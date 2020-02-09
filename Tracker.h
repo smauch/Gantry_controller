@@ -48,6 +48,10 @@ class Tracker {
         cv::Mat pipeline(cv::Mat image);
         // detects the color of a single candy in a picture
         Colors detectColorOfCandy(cv::Mat image);
+        // detects the rotationAngle of a candy in a frame
+        double detectAngle(cv::Mat image);
+        // tracks all candies of the given color in the frame
+        std::vector<Candy> getCandiesInFrame(Colors color, cv::Mat image, int rotationAngle = 0, bool trackRotation = false);
 
 
     public:
@@ -55,20 +59,21 @@ class Tracker {
         Tracker(int centerX, int centerY, int outerRadius, int innerRadius, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile);
         Tracker(json11::Json json, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile);
         Tracker();
-        // tracks all candies of the given color in the frame
-        std::vector<Candy> getCandiesInFrame(Colors color, cv::Mat image, int rotationAngle = 0);
+        
         // marks the given candy in the given frame
         cv::Mat markCandyInFrame(Candy candy, cv::Mat image); 
         // tracks a single candy of the given color and return it with adjusted angularVelocity
-        Candy getCandyOfColor(Colors color);
+        Candy getCandyOfColor(Colors color, bool trackRotation = false);
         // gives the user the option to adjust the values of the tracker
         void configure();
         // saves some settings of the class
         json11::Json to_json() const;
+        // configures the color-trackers
         void autoConfigure();
 
         // getter colorTrackers
         std::vector<ColorTracker> getColorTrackers() { return this->colorTrackers; }
+        
 };
 
 #endif

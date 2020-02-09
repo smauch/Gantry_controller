@@ -10,7 +10,7 @@
 Candy::Candy(Colors color, Coordinates currentPosition) {
     this -> color = color;
     this -> currentPosition = currentPosition;
-    this -> angularVelocity = 0;
+    this -> rotationAngle = 100;
 }
 
 /**
@@ -19,5 +19,5 @@ Candy::Candy(Colors color, Coordinates currentPosition) {
 Candy::Candy() {
     this -> color = RED;
     this -> currentPosition = Coordinates();
-    this -> angularVelocity = 0;
+    this -> rotationAngle = 100;
 }

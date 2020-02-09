@@ -2,10 +2,6 @@
 #define CANDY_H
 #include "Color.h"
 #include "Coordinates.h"
-#include <math.h>
-#include <cmath>
-#include <iostream>
-#define _USE_MATH_DEFINES
 /**
  * this class models a single piece of candy
  */
@@ -15,8 +11,8 @@ class Candy {
         Colors color;
         /** current position of the candy **/
         Coordinates currentPosition;
-        /** angular velocity of the candy **/
-        double angularVelocity;
+        /** rotation angle in degree **/
+        double rotationAngle;
 
 
     public:
@@ -26,14 +22,14 @@ class Candy {
 
         // getter currentPosition
         Coordinates getCurrentPosition() { return this->currentPosition; }
-       
-        // getter angularVelocity
-        double getAngularVelocity() { return this->angularVelocity; }
         // getter color
         Colors getColor() { return this->color; }
+        // getter rotationAngle
+        double getRotationAngle() { return this->rotationAngle;}
 
         // setter currentPosition
         void setCurrentPosition(Coordinates currentPosition) { this->currentPosition = currentPosition; }
+        // setter rotationAngle
+        void setRotationAngle(double rotationAngle) { this->rotationAngle = rotationAngle; }
 };
-
 #endif

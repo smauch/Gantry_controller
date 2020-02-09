@@ -122,6 +122,7 @@ cv::Mat Tracker::markCandyInFrame(Candy candy, cv::Mat image) {
 
     cv::rectangle(image, kartCor - size, kartCor + size, cv::Scalar(0, 0, 255), 10);
     cv::putText(image, std::to_string(candy.getColor()), kartCor - cv::Point(60, 60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 3, 8);
+    cv::putText(image, std::to_string(candy.getRotationAngle()), kartCor - cv::Point(-60, -60), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0), 3, 8);
     return image;
 }
 
@@ -173,10 +174,12 @@ json11::Json Tracker::to_json() const {
  *
  * @param color the given color
  * @param image the given image
+ * @param rotationAngle the angle the image is rotated by
+ * @param trackRotation true if the rotation of the candy should be tracked too
  *
  * @retrun a vector of all tracked candies
  */
-std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int rotationAngle) {
+std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int rotationAngle, bool trackRotation) {
     std::vector<Candy> detectedCandies;
 
     cv::Mat initialFrame = pipeline(image);
@@ -208,20 +211,35 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int r
 
         Colors detectedColor = detectColorOfCandy(initialFrame(boundingBox));
         if (detectedColor == color || color == ANY) {
-            Coordinates center(boundingBox.x + (boundingBox.width / 2) - centerX, boundingBox.y + (boundingBox.height / 2) - centerY);
+            Coordinates center(boundingBox.x + (boundingBox.width / 2.0) - centerX, boundingBox.y + (boundingBox.height / 2.0) - centerY);
             Coordinates reRotatedCenter = center.rotate(-rotationAngle);
             Candy candy(detectedColor, reRotatedCenter);
-            detectedCandies.push_back(candy);            
+
+            if (trackRotation) {
+                double angle = detectAngle(initialFrame(boundingBox));
+                candy.setRotationAngle(angle - rotationAngle);
+            }
+
+            detectedCandies.push_back(candy);
         }
     }
 
     return detectedCandies;
 }
 
-Candy Tracker::getCandyOfColor(Colors color) {
+/**
+ * this method returns a single candy of the wanted color
+ *
+ * @param color the wanted color
+ * @param trackRotation true if the rotation of the candy should be tracked too
+ *
+ * @return a single candy of the wanted color
+ */
+Candy Tracker::getCandyOfColor(Colors color, bool trackRotation) {
+    
     cv::Mat initialFrame = pipeline(camera.grab(true));
 
-    std::vector<Candy> candies = getCandiesInFrame(color, initialFrame);
+    std::vector<Candy> candies = getCandiesInFrame(color, initialFrame, 0, trackRotation);
     
     // rotates the image so that the classifier has a better chance of detection
     int angle = 0;
@@ -232,8 +250,7 @@ Candy Tracker::getCandyOfColor(Colors color) {
         cv::Mat rotationMatrix = cv::getRotationMatrix2D(rotationCenter, angle, 1.0);
             
         cv::warpAffine(initialFrame, rotatedImage, rotationMatrix, initialFrame.size());
-
-        candies = getCandiesInFrame(color, rotatedImage, -angle);
+        candies = getCandiesInFrame(color, rotatedImage, -angle, trackRotation);
     }
 
     if (candies.size() == 0) {
@@ -242,6 +259,9 @@ Candy Tracker::getCandyOfColor(Colors color) {
     return candies.front();
 }
 
+/**
+ * configures the color trackers
+ */
 void Tracker::autoConfigure() {
     for (int i = 0; i < colorTrackers.size(); i++) {
         std::cout << "Place only " << colorTrackers[i].getName() << " on the plate" << std::endl;
@@ -251,7 +271,7 @@ void Tracker::autoConfigure() {
         // tracks over a couple frames
         for (int j = 0; j < 60; j++) {        
             cv::Mat initialFrame = camera.grab(true);
-            Candy candy = getCandyOfColor(ANY);
+            Candy candy = getCandyOfColor(ANY, false);
             cv::Point center(candy.getCurrentPosition().getX() + centerX, candy.getCurrentPosition().getY() + centerY);
             cv::Rect box(center.x - 50, center.y - 50, 100, 100);
             cv::Mat roi(initialFrame(box));
@@ -273,3 +293,49 @@ void Tracker::autoConfigure() {
     }
 }
 
+/**
+ * detects the rotationAngle of a candy in a frame
+ *
+ * @param image the given frame
+ *
+ * @return the rotationAngle of the given candy. If it hasnt been detected correctly, 100 is returned
+ */
+double Tracker::detectAngle(cv::Mat image) {
+    int rho = 1;
+    int theta = 0;
+    int treshhold = 50;
+    int minLineLength = 0;
+    int maxLineGap = 20;
+
+    cv::Mat blurred;
+    cv::GaussianBlur(image, blurred, cv::Size(9, 9), 0, 0);
+
+    cv::Mat dst;
+    Canny(blurred, dst, 340, 200);
+
+    std::vector<cv::Vec4i> lines;
+    cv::HoughLinesP(dst, lines, rho, CV_PI / 180, treshhold, minLineLength, maxLineGap);
+
+    cv::Vec4i longestLine;
+    double length = 0;
+    for (int i = 0; i < lines.size(); i++) {
+        double lineLength = sqrt(pow(lines[i][0] - lines[i][2], 2)
+            + pow(lines[i][1] - lines[i][3], 2));
+
+        if (lineLength > length) {
+            length = lineLength;
+            longestLine = lines[i];
+        }
+    }
+
+    double angleInDegrees = 100;
+    if (length != 0) {
+        double angleInRadians = asin(abs(longestLine[1] - longestLine[3]) * 1.0 / length * 1.0);
+        angleInDegrees = angleInRadians * 180.0 / M_PI;
+
+        if ((longestLine[3] - longestLine[1]) > 0)
+            angleInDegrees *= -1;
+    }
+    
+    return angleInDegrees;
+}
