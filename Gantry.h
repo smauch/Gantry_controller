@@ -50,12 +50,11 @@ public:
 
 	//Constructor
 	Gantry();
-	Gantry(std::array<std::string, NUM_AMP> configPaths);
-
 	~Gantry();
 
 	bool networkSetup();
 
+	bool attachAmpConifg(std::array<std::string, NUM_AMP> configPaths);
 	//Loads amplifier CME2 configuration files and homes gantry
 	bool initGantry();
 	//Moves to lurk position 
@@ -98,11 +97,6 @@ private:
 	const Error *homeAxis(unsigned short maxTime);
 	//Trajectory planing with given angular velocity and angular of the disc
 	//Method to perform point to point moves with S-Curve profile
-
-	//Variables for motions of candy
-	double angular;
-	double angularVel;
-	double angularAcc;
 
 	//The half of the Camera resolution 1080/2
 	const static double PIXEL_RADIUS;

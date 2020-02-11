@@ -30,14 +30,8 @@ double const Gantry::PIXEL_RADIUS = 540.0;
 //	//exit(1);
 //};
 
-Gantry::Gantry()
-{
+Gantry::Gantry() {
 
-}
-
-Gantry::Gantry(std::array<std::string, NUM_AMP> configPaths)
-{
-	this->ampConfigPath = configPaths;
 }
 
 
@@ -71,6 +65,13 @@ bool Gantry::networkSetup()
 		return false;
 	return true;
 }
+
+bool Gantry::attachAmpConifg(std::array<std::string, NUM_AMP> configPaths)
+{
+	this->ampConfigPath = configPaths;
+	return false;
+}
+
 
 /**
 Initializes the axes of a gantry.
