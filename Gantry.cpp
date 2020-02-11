@@ -1,24 +1,27 @@
 #include "Gantry.h"
-#include <map>
 #include <chrono>
 #include <thread>
+#include <direct.h>
+#include <fstream>
+
 
 CML_NAMESPACE_USE();
 
-//Initialization of Fix points
-uunit Gantry::LURK_POS[Gantry::NUM_AMP] = { 138000, 0, 10000 };
-uunit Gantry::HOME_POS[Gantry::NUM_AMP] = { 0,0,0 };
-uunit Gantry::DROP_POS[Gantry::NUM_AMP] = { 0, 46350, 10000 };
-uunit Gantry::DISC_CENTER_POS[Gantry::NUM_AMP] = { 110000, 46350, 20000 };
-uunit Gantry::CATCH_Z_HEIGHT = 25250;
-uunit Gantry::DISC_RADIUS[2] = { 8000, 46350 };
-
-uunit X_STORAGE = 9100;
-std::map<int, uunit> Y_STORAGE = {{0, 69800}, {1, 77100}, {2,84600}};
-
+//3D fix position initialization
+const std::array<uunit, 3> Gantry::LURK_POS = { 138000, 0, 10000 };
+const std::array<uunit, 3> Gantry::HOME_POS = { 0,0,0 };
+const std::array<uunit, 3> Gantry::DROP_POS = { 0, 46350, 10000 };
+const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 110000, 46350, 20000 };
+const std::array<uunit, 3> Gantry::DISC_DROP = { 60000, 46350, 25000 };
+const std::array<uunit, 3> Gantry::STORAGE_BASE = { 9100, 0, 18000 };
+//2D fix position initialization
+//@inner radius, @outer radius
+const std::array<uunit, 2> Gantry::DISC_RADIUS = { 8000, 46350 };
+//1D fix position initialization
+const uunit Gantry::CATCH_Z_HEIGHT = 25250;
+const std::map<Colors, uunit> Gantry::Y_STORAGE = {{GREEN, 69800}, {RED, 77100}, {YELLOW,84600}};
+//Half of Camera resolution
 double const Gantry::PIXEL_RADIUS = 540.0;
-
-
 
 //static void showerr(const Error* err, const char* msg) {
 //	if (!err) return;
@@ -32,197 +35,196 @@ Gantry::Gantry()
 
 }
 
+Gantry::Gantry(std::array<std::string, NUM_AMP> configPaths)
+{
+	this->ampConfigPath = configPaths;
+}
+
+
+
 Gantry::~Gantry()
 {
-
-	ptpMove(HOME_POS);
+	const Error* err;
+	err = ptpMove(HOME_POS);
 	for (int i = 0; i < NUM_AMP; i++)
 	{
-		err = this->link[i].Disable(true);
-		showerr(err, "Disable Amplifiers");
+		this->link[i].Disable(true);
 	}
 }
 
-
-bool Gantry::setPump(bool state)
+void Gantry::showerr(const Error* err, const char* msg)
 {
-	if (state) {
-		this->amp[2].SetOutputConfig(1, OUTCFG_MANUAL_H);
-	}
-	else
-	{
-		this->amp[2].SetOutputConfig(1, OUTCFG_MANUAL_L);
-	}
-	return false;
+	if (!err) return;
+	printf("Error: %s - %s\n", msg, err->toString());
 }
 
-bool Gantry::setValve(bool state)
+
+
+bool Gantry::networkSetup()
 {
-	if (state) {
-		//Close the Valve
-		this->amp[2].SetOutputConfig(2, OUTCFG_MANUAL_H);
-	}
-	else
-	{
-		//Open the Valve
-		this->amp[2].SetOutputConfig(2, OUTCFG_MANUAL_L);
-	}
-	return false;
-}
-
-bool Gantry::getCatched()
-{
-	uint16 currentInput;
-	this->amp[2].GetInputs(currentInput);
-	currentInput = currentInput & 0b10;
-	if (currentInput)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-
-	
-
-bool Gantry::initGantry()
-{	
-	// Open the low level CAN port that will be used to communicate to the amplifiers.
+	const Error* err;
 	err = can.Open();
-	showerr(err, "Opening CAN port");
-	// Create the upper level CANopen object
-	err = this->canOpen.Open(can);
-	showerr(err, "Opening CANopen network");
-	// Initialize the amplifier
-	for (short i = 0; i < NUM_AMP; i++)
-	{
-		err = this->amp[i].Init(canOpen, CAN_AXIS[i]);
-		showerr(err, "Initting Axis amplifier");
-	}
-	//Load the amplifier settings from CME2 config
-
-
-	for (short i = 0; i < NUM_AMP; i++)
-	{
-		int line;
-		if (std::filesystem::exists(ampConfigPath[i].c_str())) {
-			std::cout << ampConfigPath[i].c_str() << " exists" << std::endl;
-		}
-		else {
-			std::cout << ampConfigPath[i].c_str() << " doesn't exist" << std::endl;
-		}
-		err = this->amp[i].LoadFromFile(ampConfigPath[i].c_str(), line);
-		showerr(err, "Loading from file\n");
-	}
-	//Initalize linkit object
-	err = this->link.Init(NUM_AMP, amp);
-	showerr(err, "Linkage init");
-	printf("Finished initting amps and linkage.\n");
-	if (homeAxis() == false) {
+	if (err)
 		return false;
-	}
-	//Operation that will be performed if window is exceeded
-	LinkSettings linkCfg;
-	linkCfg.haltOnPosWarn = true;
-	linkCfg.haltOnVelWin = true;
-	link.Configure(linkCfg);
-	//Halt modes
-	for (short i = 0; i < NUM_AMP; i++)
-	{
-		this->link[i].SetHaltMode(HALT_QUICKSTOP);
-	}
-
-	//Movement limitations setup
-	ProfileConfig profConf;
-	err = amp[0].GetProfileConfig(profConf);
-	showerr(err, "Read Profile Config");
-	err = link.SetMoveLimits(profConf.vel*0.75, profConf.acc*0.5, profConf.dec*0.5, profConf.jrk*0.5);
-	showerr(err, "Setting move limits");
-
-	angular = PI;
-	angularVel = 0;
-
+	err = canOpen.Open(can);
+	if (err)
+		return false;
 	return true;
 }
 
 /**
-*Catches a Candy that is moving on the rotary table
-*
-*@param angularVel the angular velocity of the candy in rad/ms
-*@param angular the angular of the candy relative to the camera perspective
-*@param radius the radius of the candy relative to the disc center in pixel
-*@param targetPos the position where the candy should be dropped
-*
-*@return true if the candy got chatched and is dropped at targePos
+Initializes the axes of a gantry.
+
+@param ampConfigPath paths to CME2 amplifier config files.
+
+@returns CML Error object
 */
+bool Gantry::initGantry()
+{	
+	const Error* err;
+	for (short i = 0; i < NUM_AMP; i++)
+	{
+		err = amp[i].Init(canOpen, CAN_AXIS[i]);
+		if (err)
+			return false;
+	}
+	if (ampConfigPath.size() != NUM_AMP)
+		return false;
+	for (short i = 0; i < NUM_AMP; i++)
+	{
+		int line;
+		err = amp[i].LoadFromFile(ampConfigPath[i].c_str(), line);
+		if (err)
+			return false;
+	}
+	err = link.Init(NUM_AMP, amp);
+	if (err)
+		return false;
+	err = homeAxis(30000);
+	if (err)
+		return false;
+	//Operation that will be performed if window is exceeded
+	linkCfg.haltOnPosWarn = true;
+	linkCfg.haltOnVelWin = true;
+	err = link.Configure(linkCfg);
+	if (err)
+		return false;
+	for (short i = 0; i < NUM_AMP; i++)
+	{
+		err = link[i].SetHaltMode(HALT_QUICKSTOP);
+		if (err)
+			return false;
+	}
+	//Movement limitations setup
+	ProfileConfig profConf;
+	err = amp[0].GetProfileConfig(profConf);
+	if (err)
+		return false;
+	err = link.SetMoveLimits(profConf.vel*0.75, profConf.acc*0.5, profConf.dec*0.5, profConf.jrk*0.5);
+	if (err)
+		return false;
+	return true;
+}
 
-bool Gantry::catchRotary(double angularVel, double angular, double pixelRadius, uunit const targetPos[NUM_AMP], bool measureTime )
+
+/**
+Homes all axes in reverse order to prevent collisions.
+
+@param maxTime The maximal allowed time (in milliseconds) for homing per axis.
+
+@returns CML Error object
+*/
+const Error *Gantry::homeAxis(unsigned short maxTime)
 {
-	//Time measurement to catch
+	const Error* err = 0;
+	for (short i = NUM_AMP-1; i >= 0; i--)
+	{
+		err = link[i].GoHome();
+		if (err)
+			return err;
+	
+		err = link[i].WaitMoveDone(maxTime);
+		if (err)
+			return err;
+	}
+	return err;
+}
 
+/**
+Catches a Candy that is moving on the rotary table
+
+@param angularVel the angular velocity of the candy in rad/ms
+@param angular the angular of the candy relative to the camera perspective
+@param radius the radius of the candy relative to the disc center in pixel
+@param targetPos the position where the candy should be dropped
+
+@return true if the candy got chatched and is dropped at targePos
+*/
+bool Gantry::catchRotary(double ang, double angVel, double pixelRadius, std::array<uunit, 3> dropPos, unsigned short maxTime, bool debugMotion)
+{
+	const Error* err;
 	auto start_move = std::chrono::high_resolution_clock::now();
-
 	//Radius scaling from pixel to uunit
 	double radius = DISC_RADIUS[1] * (pixelRadius / PIXEL_RADIUS);
-	
-	if (radius < DISC_RADIUS[0] || radius > DISC_RADIUS[1])
-	{
-		//Should throw exception
-		printf("radius out of operation area");
+	if (radius < DISC_RADIUS[0] || radius > DISC_RADIUS[1]){
 		return false;
 	}
-
-	//Current angular position
-
-
-	//Upload trajectory to buffer and start movement
-	//trj.calcMovement(getPos(), radius, angular, angularVel, targetPos);
-	trj.calcMovement(Gantry::LURK_POS, radius, angular, angularVel, targetPos);
+	//Activates auto pump at 90% of catch heigh, stay on for 500ms
+	err = amp[TOOL_AXIS].SetOutputConfig(PUMP_OUT_PIN, OUTCFG_POSITION_TRIG_LOW2HIGH, CATCH_Z_HEIGHT*0.9, 500);
+	if (err) {
+		return false;
+	}
+	setValve(false);
+	trj.calcMovement(getPos(), radius, ang, angVel, dropPos, maxTime);
 	auto stop_clac = std::chrono::high_resolution_clock::now();
 	err = link.SendTrajectory(trj, false);
-	showerr(err, "Loading trajectory to Buffer");
-	this->setValve(false);
-	//this->setPump(true);
+	if (err) {
+		return false;
+	}
+	if (debugMotion) {
+		trj.saveTrj();
+	}
 	err = link.StartMove();
-	showerr(err, "Starting trj in Buffer");
-	err = link.WaitMoveDone(60000);
-	showerr(err, "Waiting for trj done");
-	this->setPump(false);
+	if (err) {
+		return false;
+	}
+	err = link.WaitMoveDone(2*maxTime);
+	if (err) {
+		return false;
+	}
 	auto stop_move = std::chrono::high_resolution_clock::now();
 	auto duration_calc = std::chrono::duration_cast<std::chrono::milliseconds>(stop_clac - start_move);
 	auto duration_move = std::chrono::duration_cast<std::chrono::milliseconds>(stop_move - stop_clac);
-	// To get the value of duration use the count() 
-	// member function on the duration object 
-	std::cout << "Calculation lasts" << duration_calc.count() << " miliseconds" << std::endl;
-	std::cout << "Movement lasts " << duration_move.count() << " miliseconds" << std::endl;
+	if (debugMotion) {
+		std::vector <std::string> message;
+		message.push_back("Calculation lasts" + std::to_string(duration_calc.count()) + " miliseconds");
+		message.push_back("Movement lasts " + std::to_string(duration_move.count()) + " miliseconds");
+		gantryLog(message);
+	}
 	if (getCatched())
 	{
-		//driveback
-		this->setPump(false);
-		//Drive to Output
-		this->ptpMove(targetPos);
-		this->setValve(true);
-		this->ptpMove(LURK_POS);
+		setValve(true);
+		err = ptpMove(LURK_POS);
+		return true;
 	}
 	else
 	{
-		this->setPump(false);
-		//this->ptpMove(HOME_POS);
+		setValve(true);
+		err = ptpMove(LURK_POS);
 		return false;
 	}
-	return false;
 }
 
 
 bool Gantry::prepareCatch()
 {
+	const Error* err;
 	this->link.ClearLatchedError();
-	ptpMove(LURK_POS);
-	//Check Motor state
-	return false;
+	err = ptpMove(LURK_POS);
+	if (err) {
+		return false;
+	}
+	return true;
 }
 
 /**
@@ -231,47 +233,76 @@ bool Gantry::prepareCatch()
 *@param candyPos is the position of the candy in uunits
 *@param targetPos is the position where the candy should be dropped of
 */
-bool Gantry::catchStatic(uunit candyPos[NUM_AMP], uunit targetPos[NUM_AMP])
+bool Gantry::catchStatic(std::array<uunit, NUM_AMP> candyPos, std::array<uunit, NUM_AMP> targetPos)
 {
-	candyPos[2] -= 1000;
-	ptpMove(candyPos);
-	this->setValve(false);
-	this->setPump(true);
-	candyPos[2] += 1000;
-	ptpMove(candyPos);
-	candyPos[2] -= 1000;
-	ptpMove(candyPos);
-	this->setPump(false);
-	ptpMove(targetPos);
-	this->setValve(true);
-	return false;
+	const Error* err;
+	candyPos[TOOL_AXIS] -= 1000;
+	err = ptpMove(candyPos);
+	if (err){
+		return false;
+	}
+	err = setValve(false);
+	if (err) {
+		return false;
+	}
+	err = setPump(true);
+	if (err) {
+		return false;
+	}
+	candyPos[TOOL_AXIS] += 1000;
+	err = ptpMove(candyPos);
+	if (err) {
+		return false;
+	}
+	candyPos[TOOL_AXIS] -= 1000;
+	err = ptpMove(candyPos);
+	if (err) {
+		return false;
+	}
+	err = setPump(false);
+	if (err) {
+		return false;
+	}
+	err = ptpMove(targetPos);
+	if (err) {
+		return false;
+	}
+	err = setValve(true);
+	if (err) {
+		return false;
+	}
+	return true;
 }
 
 
 /**
 *Does a S-Curve move to the target Pos 
-*
-*@param target psoition as array x,y,z
-*/
-void Gantry::ptpMove(uunit const targetPos[NUM_AMP])
-{
-	for (int i = 0; i < NUM_AMP; i++)
-	{
-		err = this->link[i].ClearFaults();
-		showerr(err, "Faults not cleared");
-		ampTargetPos[i] = targetPos[i];
-	}
-	
 
-	err = this->link.MoveTo(ampTargetPos);
-	showerr(err, "Starting move");
-	err = this->link.WaitMoveDone(20000);
-	showerr(err, "Waiting for move to finish");
+@param targetPos Position object that where the gantry should move to.
+@param maxTime The maxTime that should not be exceeded.
+*/
+const Error *Gantry::ptpMove(std::array<uunit, NUM_AMP> targetPos, unsigned short maxTime)
+{
+	const Error* err;
+	Point<targetPos.size()> ampTarget;
+	for (size_t i = 0; i < targetPos.size(); i++)
+	{
+		ampTarget[i] = targetPos[i];
+	}
+	err = link.MoveTo(ampTarget);
+	if (err) {
+		return err;
+	}
+	err = link.WaitMoveDone(maxTime);
+	if (err) {
+		return err;
+	}
+	return err;
 }
 
-uunit* Gantry::getPos()
+std::array<uunit, Gantry::NUM_AMP> Gantry::getPos()
 {
-	uunit actPos[NUM_AMP];
+	std::array<uunit, NUM_AMP> actPos;
 	for (short i = 0; i < NUM_AMP; i++)
 	{
 		link[i].GetPositionActual(actPos[i]);
@@ -279,34 +310,43 @@ uunit* Gantry::getPos()
 	return actPos;
 }
 
-bool Gantry::fillTable(int color)
+bool Gantry::fillTable(Colors color)
 {
-	uunit target[3];
-	target[0] = X_STORAGE;
-	target[1] = Y_STORAGE[color];
-	target[2] = 18000;
-	ptpMove(target);
+	const Error* err;
+	std::array<uunit, 3> targetPos = STORAGE_BASE;
+	targetPos[1] = Gantry::Y_STORAGE.at(color);
+	err = ptpMove(targetPos);
+	if (err) {
+		return false;
+	}
 	ProfileConfigTrap carefulCatch;
 	carefulCatch.acc = 5000;
 	carefulCatch.dec = 5000;
 	carefulCatch.vel = 5000;
 	carefulCatch.pos = CATCH_Z_HEIGHT;
-	this->link[2].SetupMove(carefulCatch);
-	this->link[2].SetPositionWarnWindow(80);
+	link[TOOL_AXIS].SetupMove(carefulCatch);
+	link[TOOL_AXIS].SetPositionWarnWindow(80);
 	EventAny posWarn(AMPEVENT_POSWARN);
-	EventNone noWarn(AMPEVENT_POSWARN);
-	this->link[2].StartMove();
-	err = this->link[2].WaitEvent(posWarn, 3000);
+	link[TOOL_AXIS].StartMove();
+	err = link[TOOL_AXIS].WaitEvent(posWarn, 3000);
 	if (!err) {
-		std::cout << "performing quickstop" << std::endl;
-		this->link[2].HaltMove();
-		this->link[2].SetPositionWarnWindow(4096);
-		this->setValve(false);
-		this->setPump(true);
-		ptpMove(target);
-		this->setPump(false);
-		ptpMove(DISC_CENTER_POS);
+		//std::cout << "performing quickstop" << std::endl;
+		link[TOOL_AXIS].HaltMove();
+		link[TOOL_AXIS].SetPositionWarnWindow(4096);
+		setValve(false);
+		setPump(true);
+		err = ptpMove(targetPos);
+		setPump(false);
+		err = ptpMove(DISC_DROP);
+		double xRandom = ((double)std::rand() / (RAND_MAX));
+		carefulCatch.vel = 15000;
+		carefulCatch.pos = DISC_CENTER_POS[0] - DISC_RADIUS[1] / 2.0;
+		link[0].SetupMove(carefulCatch);
+		link[0].StartMove();
+		err = link.WaitMoveDone(10000);
 		this->setValve(true);
+		err = ptpMove(LURK_POS);
+
 		return true;
 	}
 	else {
@@ -314,56 +354,85 @@ bool Gantry::fillTable(int color)
 		this->link[2].SetPositionWarnWindow(4096);
 		showerr(err, "Waiting for move to finish");
 		std::cout << "empty" << std::endl;
-		ptpMove(target);
+		err = ptpMove(targetPos);
 		return false;
 	}	
 }
 
-void Gantry::showerr(const Error* err, const char* msg)
+bool Gantry::handleError(const Error* err)
 {
-	if (!err) return;
-	printf("Error: %s - %s\n", msg, err->toString());
-	system("PAUSE");
-	exit(1);
+	return false;
 }
 
 
 
-bool Gantry::homeAxis()
-{
-	//Check if CME2 also sets up the Homeing options
-	//otherwiese
-	//HomeConfig hcfg;
-	//err = link[i].GoHome( hcfg );
-	for (short i = NUM_AMP - 1; i >= 0; i--)
-	{
-		//Home each amplifier with the default homeing settings
-		err = this->link[i].GoHome();
-		showerr(err, "Going home");
-		// Wait for all amplifiers to finish the home by waiting on the linkage object itself.
-		printf("Waiting for home to finish...\n");
-		err = this->link[i].WaitMoveDone(20000);
-		showerr(err, "waiting on home");
-	}	
-	char userInput;
-	do
-	{
-		std::cout << "Did the axis home right? [y/n]" << std::endl;
-		std::cin >> userInput;
-	} while (!std::cin.fail() && userInput != 'y' && userInput != 'n');
+/**
+Set the pump to specific state on/off
 
-	if (userInput == 'y')
-	{
+@return CML Error object
+*/
+const Error *Gantry::setPump(bool state)
+{
+	const Error* err;
+	if (state)
+		err = amp[TOOL_AXIS].SetOutputConfig(PUMP_OUT_PIN, OUTCFG_MANUAL_H);
+	else
+		err = amp[TOOL_AXIS].SetOutputConfig(PUMP_OUT_PIN, OUTCFG_MANUAL_L);
+	return err;
+}
+
+
+/**
+Set the valve to specific state on/off
+
+@return CML Error object
+*/
+const Error* Gantry::setValve(bool state)
+{
+	const Error* err;
+	if (state)
+		err = amp[TOOL_AXIS].SetOutputConfig(VALVE_OUT_PIN, OUTCFG_MANUAL_H);
+	else
+		err = amp[TOOL_AXIS].SetOutputConfig(VALVE_OUT_PIN, OUTCFG_MANUAL_L);
+	return err;
+}
+
+
+/**
+Check if the tool axis caught something.
+
+@return bool catched or not
+*/
+bool Gantry::getCatched()
+{
+	const Error* err;
+	uint16 currentInput;
+	err = amp[TOOL_AXIS].GetInputs(currentInput);
+	currentInput = currentInput & PRESSURE_IN_PIN;
+	if (currentInput && !err)
 		return true;
-	}
-	else {
-		printf("Error: Follow these steps.\n");
-		printf("(1) Remove power supply and check if axes are able to move smoothly.\n");
-		printf("(2) If this is not the problem, check homeing values in CME2.\n");
+	else
 		return false;
-	}
 }
 
+void Gantry::gantryLog(std::vector <std::string> message)
+{
+	char rootDir[] = ".\\log";
+	if (!std::filesystem::exists(rootDir)) {
+		if (!_mkdir(rootDir)) {
+			return;
+		}
+	}
+	std::ofstream logFile;
+	logFile.open(".\\log\\gantry.txt", std::ios::app);
+	if (logFile.is_open()) {
+		for (auto const& line : message) {
+			logFile << line << std::endl;
+		}
+		logFile.close();
+	}
+	return;
+}
 
 
 

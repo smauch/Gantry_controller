@@ -5,6 +5,9 @@
 #include "Gantry.h"
 #include <interpolation.h>
 #include <fstream>
+#include <filesystem>
+#include <direct.h>
+
 
 CML_NAMESPACE_USE();
 
@@ -89,22 +92,46 @@ void GantryTrajectory::circle(double radius, double angular, double angularVelTa
 
 }
 
-void GantryTrajectory::cubicSpline()
+bool GantryTrajectory::saveTrj()
 {
-	int t_interp[5] = { 0,1,2,3,4 };
-	alglib::spline1dinterpolant cubic_spline_x;
-	alglib::spline1dinterpolant cubic_spline_y;
-	alglib::spline1dinterpolant cubic_spline_z;
+	char rootDir[] = ".\\log";
+	if (!std::filesystem::exists(rootDir)) {
+		if (!_mkdir(rootDir)) {
+			return false;
+		}
+	}
+	std::ofstream xFile;
+	std::ofstream yFile;
+	std::ofstream zFile;
+	xFile.open(".\\log\\xPos.txt", std::ios::out);
+	yFile.open(".\\log\\yPos.txt", std::ios::out);
+	zFile.open(".\\log\\zPos.txt", std::ios::out);
+	if (xFile.is_open() && yFile.is_open() && zFile.is_open()) {
+		for (int count = 0; count < NUMBER_POS_CALC; count++) {
+			xFile << xPos[count] << std::endl;
+			yFile << yPos[count] << std::endl;
+			zFile << zPos[count] << std::endl;
+		}
+		xFile.close();
+		yFile.close();
+		zFile.close();
+	}
+	else {
+		return false;
+	}
 }
 
 
 
 
-
-bool GantryTrajectory::calcMovement(uunit actPos[], double radius, double ang, double angVel, const uunit targetPos[])
+bool GantryTrajectory::calcMovement(std::array<uunit, 3> actPos, double radius, double ang, double angVel, std::array<uunit, 3> dropPos, unsigned short maxTime)
 {
+	double stepTime = 0.025;
+	// Predict
+	ang = ang + angVel * 1.4;
+
 	uunit splPointX[2], splPointY[2];
-	uunit splPointZ[3] = { actPos[2], Gantry::CATCH_Z_HEIGHT, targetPos[2] };
+	uunit splPointZ[3] = { actPos[2], Gantry::CATCH_Z_HEIGHT, dropPos[2] };
 	uunit splVelX[2], splVelY[2];
 	uunit splVelZ[3] = { 0,0,0 };
 	double time[5] = { 0, 49, 99, 149, 199 };
@@ -121,8 +148,8 @@ bool GantryTrajectory::calcMovement(uunit actPos[], double radius, double ang, d
 	realVelX.attach_to_ptr(2, &(splVelX[0]));
 	realVelY.attach_to_ptr(2, &(splVelY[0]));
 	realVelZ.attach_to_ptr(3, &(splVelZ[0]));
-	// Predict
-	//ang = ang + angVel * 0.5;
+	
+	
  
 	//Poit calcs
 	//Sction 1
@@ -134,8 +161,9 @@ bool GantryTrajectory::calcMovement(uunit actPos[], double radius, double ang, d
 
 	splPointX[1] = radius * sin(ang) + Gantry::DISC_CENTER_POS[0];
 	splPointY[1] = radius * -cos(ang) + Gantry::DISC_CENTER_POS[1];
-	splVelX[1] = radius * cos(ang) * angVel / 100.0;
-	splVelY[1] = radius* sin(ang)* angVel / 100.0;
+
+	splVelX[1] = radius * cos(ang) * angVel * stepTime;
+	splVelY[1] = radius* sin(ang)* angVel * stepTime;
 
 
 	//Only the first two elements
@@ -148,7 +176,7 @@ bool GantryTrajectory::calcMovement(uunit actPos[], double radius, double ang, d
 		xPos[t] = alglib::spline1dcalc(hermiteX, t);
 		yPos[t] = alglib::spline1dcalc(hermiteY, t);
 		zPos[t] = actPos[2];
-		trjTime[t] = 30;
+		trjTime[t] = stepTime * 1000;
 	}
 
 
@@ -158,21 +186,22 @@ bool GantryTrajectory::calcMovement(uunit actPos[], double radius, double ang, d
 
 	for (int t = 50; t < 150; t++)
 	{
-		ang = ang + angVel * 0.03;
+		ang = ang + angVel * stepTime;
 		xPos[t] = radius * sin(ang) + Gantry::DISC_CENTER_POS[0];
 		yPos[t] = radius * -cos(ang) + Gantry::DISC_CENTER_POS[1];
 		zPos[t] = alglib::spline1dcalc(hermiteZ, t);
-		trjTime[t] = 30;
+		trjTime[t] = stepTime * 1000;
 	}
 
-	//ang = ang + angVel * 0.01;
 	splPointX[0] = radius * sin(ang) + Gantry::DISC_CENTER_POS[0];
 	splPointY[0] = radius * -cos(ang) + Gantry::DISC_CENTER_POS[1];
-	splVelX[0] = radius * cos(ang) * angVel / 100.0;
-	splVelY[0] = radius * sin(ang) * angVel / 100.0;
 
-	splPointX[1] = targetPos[0];
-	splPointY[1] = targetPos[1];
+
+	splVelX[0] = radius * cos(ang) * angVel * stepTime;
+	splVelY[0] = radius * sin(ang) * angVel * stepTime;
+
+	splPointX[1] = dropPos[0];
+	splPointY[1] = dropPos[1];
 	splVelX[1] = 0;
 	splVelY[1] = 0;
 
@@ -184,21 +213,11 @@ bool GantryTrajectory::calcMovement(uunit actPos[], double radius, double ang, d
 	{
 		xPos[t] = alglib::spline1dcalc(hermiteX, t);
 		yPos[t] = alglib::spline1dcalc(hermiteY, t);
-		zPos[t] = targetPos[2];
-		trjTime[t] = 30;
+		zPos[t] = dropPos[2];
+		trjTime[t] = stepTime * 1000;
 	}
 	trjTime[NUMBER_POS_CALC - 1] = 0;
-	std::ofstream xFile("xPos.txt");
-	std::ofstream yFile("yPos.txt");
-	std::ofstream zFile("zPos.txt");
 
-	for (int count = 0; count < 200; count++) {
-		xFile << xPos[count] << std::endl;
-		yFile << yPos[count] << std::endl;
-		zFile << zPos[count] << std::endl;
-	}
-
-	std::cout << "finished" << std::endl;
 	return false;
 }
 

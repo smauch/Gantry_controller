@@ -2,6 +2,7 @@
 #define GANTRYTRAJECTORY_H
 #include "CML.h"
 #include <corecrt_math_defines.h>
+#include <array>
 
 using namespace CML;
 
@@ -17,6 +18,7 @@ private:
 	uunit yVel[NUMBER_POS_CALC];
 	uunit zVel[NUMBER_POS_CALC];
 	uunit trjTime[NUMBER_POS_CALC];
+
 	double angularAcc = 0;
 	double angularVel = 0;
 	double angular = M_PI;
@@ -32,8 +34,8 @@ public:
 	virtual int GetDim(void);
 	virtual bool UseVelocityInfo(void);
 	virtual const Error* NextSegment(uunit pos[], uunit vel[], uint8& time);
-	bool calcMovement(uunit actPos[], double radius, double angular, double angularVelTarget, const uunit targetPos[]);
+	bool calcMovement(std::array<uunit, 3> actPos, double radius, double angular, double angularVelTarget,std::array<uunit, 3> targetPos, unsigned short maxTime);
 	void circle(double radius, double angular, double angularVel);
-	void cubicSpline();
+	bool saveTrj();
 };
 #endif
