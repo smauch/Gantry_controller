@@ -28,6 +28,8 @@ public:
 	/*Constructor and destructor for any instances of the rotarytable class */
 	RotaryTable();
 	~RotaryTable();
+
+	bool initNetwork();
 	
 	/*Use this function to set the params for the ramps and the needed velocity in U/min  */
 	void setVelocity(BOOL velocity, BOOL v_acc, BOOL v_dec);
