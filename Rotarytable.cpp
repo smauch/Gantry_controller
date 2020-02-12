@@ -29,7 +29,12 @@ extern "C"
 
 
 
-RotaryTable::RotaryTable(){
+RotaryTable::RotaryTable()
+{
+}
+
+bool RotaryTable::initNetwork()
+{
 
 	//-----------This Constructor initalizes the can-board, the interface and adding the node to the can-network and prepares the motor for the rotations---------------------
 
@@ -47,63 +52,12 @@ RotaryTable::RotaryTable(){
 	m_node_no_master = 0;
 	m_hbtime = 0;
 	m_AddFeatures = COP_k_NO_FEATURES;
-	m_res2 = 0;
 
 	//Adding node to can network
 	m_NgOrHb = COP_k_HEARTBEAT;
 	m_GuardHeartbeatTime = 500;
 	m_lifetimefactor = 0;
 	m_node_no_slave = 127;
-	m_res3 = 0;
-
-
-	//Initializsation of board
-	m_res = COP_InitBoard(&m_Board_Hdl, &m_boardtype, &m_boardID, m_canline);
-	try
-	{
-		if (m_res != BER_k_OK)
-		{ 
-			throw "Initialization of board failed";
-
-		}
-
-	}
-	catch (const char *e)
-	{
-		std::cout << e << std::endl;
-
-	}
-
-	//Initialization of interface
-	m_res2 = COP_InitInterface(m_Board_Hdl, m_baudtable, m_baudrate, m_node_no_master, m_hbtime, m_AddFeatures);
-	try
-	{
-		if (m_res2 != COP_k_OK)
-		{
-			throw "Initialization of interface failed";
-		}
-
-	}
-	catch (const char *e)
-	{
-		std::cout << e << std::endl;
-
-	}
-	//Add of node to the can network
-	m_res3 = COP_AddNode(m_Board_Hdl, m_node_no_slave, m_NgOrHb, m_GuardHeartbeatTime + 100, m_lifetimefactor);
-	try
-	{
-		if (m_res3 != COP_k_OK)
-		{
-			throw "Add of the node failed";
-
-		}
-
-	}
-	catch (const char *e)
-	{
-		std::cout << e << std::endl;
-	}
 
 	WORD idx_vector[2] = { 0x4000, 0x4150 };
 	BYTE subidx_vector[2] = { 2, 1 };
@@ -113,23 +67,45 @@ RotaryTable::RotaryTable(){
 	m_mode = COP_k_NO_BLOCKTRANSFER;
 	m_abortcode = 0;
 
-	for (auto i = 0; i < 2; i++)
+
+	//Initializsation of board
+	m_res = COP_InitBoard(&m_Board_Hdl, &m_boardtype, &m_boardID, m_canline);
+	if (m_res != BER_k_OK)
 	{
-		results[i] = COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, idx_vector[i], subidx_vector[i], sizeof(value_vector[i]), (PBYTE)&value_vector[i], &m_abortcode);	
-		
-		try
+		return false;
+	}
+	else
+	{
+		//Initialization of interface
+		m_res = COP_InitInterface(m_Board_Hdl, m_baudtable, m_baudrate, m_node_no_master, m_hbtime, m_AddFeatures);
+	}
+
+	if (m_res != COP_k_OK)
+	{
+		return false;
+	}
+	else
+	{
+		//Add of node to the can network
+		m_res = COP_AddNode(m_Board_Hdl, m_node_no_slave, m_NgOrHb, m_GuardHeartbeatTime + 100, m_lifetimefactor);
+	}
+	if (m_res != COP_k_OK)
+	{
+		return false;
+	}
+	else
+	{
+		for (auto i = 0; i < 2; i++)
 		{
-			if (results[i] != 0)
+			m_res = COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, idx_vector[i], subidx_vector[i], sizeof(value_vector[i]), (PBYTE)&value_vector[i], &m_abortcode);
+			if (m_res != 0)
 			{
-				throw "One of the Initialization steps failed";
+				return false;
 			}
 		}
-		catch (const char *e)
-		{
-			std::cout << e << std::endl;
-		}
-
 	}
+
+	return true;
 
 }
 
