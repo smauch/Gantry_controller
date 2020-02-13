@@ -33,13 +33,16 @@ public:
 	
 	/*Use this function to set the params for the ramps and the needed velocity in U/min  */
 	void setVelocity(BOOL velocity, BOOL v_acc, BOOL v_dec);
+	void setRelative(float angular, BOOL velocity);
 
 	/*Functions to start and stop the movement the movement*/
-	void startMovement(void);
-	void stopMovement(void);
-	void updateVelocity(BOOL upvelocity);
-	void rotateRel(BOOL angular);
+	bool startMovement(void);
+	bool stopMovement(void);
+	bool updateVelocity(BOOL upvelocity);
+	void rotateRel();
+	void rotateRelTwice();
 	double getAngVelocity();
+	BOOL getTabVelocity();
 	bool isMoving(void);
 
 private:
