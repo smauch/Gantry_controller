@@ -67,10 +67,11 @@ class Tracker {
         // saves some settings of the class
         json11::Json to_json() const;
         // configures the color-trackers
-        void autoConfigure();
+        void autoConfigure(Colors color);
 
         // getter colorTrackers
         std::vector<ColorTracker> getColorTrackers() { return this->colorTrackers; }
+
         
 };
 
