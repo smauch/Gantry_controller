@@ -232,10 +232,9 @@ Candy Tracker::getCandyOfColor(Colors color, bool trackRotation) {
 /**
  * configures the color trackers
  */
-void Tracker::autoConfigure() {
-    for (int i = 0; i < colorTrackers.size(); i++) {
-        std::cout << "Place only " << colorTrackers[i].getName() << " on the plate" << std::endl;
-        system("pause");
+void Tracker::autoConfigure(Colors color) {
+    
+        int i = static_cast<Colors> (color);
         cv::Scalar meanLab(0.0, 0.0, 0.0);
 
         // tracks over a couple frames
@@ -260,7 +259,7 @@ void Tracker::autoConfigure() {
         colorTrackers[i].setLightness(meanLab[0]);
         colorTrackers[i].setAComponent(meanLab[1]);
         colorTrackers[i].setBComponent(meanLab[2]);
-    }
+    
 }
 
 /**
