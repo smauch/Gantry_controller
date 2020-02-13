@@ -59,13 +59,7 @@ bool RotaryTable::initNetwork()
 	m_lifetimefactor = 0;
 	m_node_no_slave = 127;
 
-	WORD idx_vector[2] = { 0x4000, 0x4150 };
-	BYTE subidx_vector[2] = { 2, 1 };
-	BOOL value_vector[2] = { 1, 1, };
-	SHORT results[2];
-	m_sdo_no = COP_k_DEFAULT_SDO;
-	m_mode = COP_k_NO_BLOCKTRANSFER;
-	m_abortcode = 0;
+	
 
 
 	//Initializsation of board
@@ -95,6 +89,13 @@ bool RotaryTable::initNetwork()
 	}
 	else
 	{
+		WORD idx_vector[2] = { 0x4000, 0x4150 };
+		BYTE subidx_vector[2] = { 2, 1 };
+		BOOL value_vector[2] = { 1, 1, };
+		SHORT results[2];
+		m_sdo_no = COP_k_DEFAULT_SDO;
+		m_mode = COP_k_NO_BLOCKTRANSFER;
+		m_abortcode = 0;
 		for (auto i = 0; i < 2; i++)
 		{
 			m_res = COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, idx_vector[i], subidx_vector[i], sizeof(value_vector[i]), (PBYTE)&value_vector[i], &m_abortcode);
@@ -135,7 +136,21 @@ void RotaryTable::setVelocity(BOOL velocity, BOOL v_acc, BOOL v_dec) {
 	
 }
 
-void RotaryTable::startMovement() {
+void RotaryTable::setRelative(float angular, BOOL velocity)
+{
+	m_continue = 0x04;
+	m_vel = velocity;
+	//m_increm = angular;
+	angular = (4096 * angular * 36 / (2 * M_PI));
+	m_increm = int(angular);
+	m_mode_motor = 0x77;
+	m_abortcode = 0;
+	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, sizeof(m_vel), (PBYTE)&m_vel, &m_abortcode);
+	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x12, sizeof(m_increm), (PBYTE)&m_increm, &m_abortcode);
+
+}
+
+bool RotaryTable::startMovement() {
 
 	m_abortcode = 0;
 	m_mode_motor = 0x74;
@@ -144,27 +159,37 @@ void RotaryTable::startMovement() {
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 1, sizeof(m_continue), (PBYTE)&m_continue, &m_abortcode);
 	//Starting motor
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
-	bool moving = this->isMoving();
-	if (moving)
+	BOOL vel = this->getTabVelocity();
+	if (m_vel == vel)
 	{
-		std::cout << "Motor is in good state" << std::endl;
+		return true;
 	}
 	else
 	{
-		std::cout << "Motor has an internal error" << std::endl;
+		return false;
 	}
+
 }
 
-void RotaryTable::stopMovement(void) {
+bool RotaryTable::stopMovement(void) {
 
 	m_abortcode = 0;
 	m_mode_motor = 0x03;
 	//Stopping motor
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 1, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
+	BOOL vel = this->getTabVelocity();
+	if (vel == 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 
 }
 
-void RotaryTable::updateVelocity(BOOL upvelocity) {
+bool RotaryTable::updateVelocity(BOOL upvelocity) {
 
 	m_vel = upvelocity;
 	m_abortcode = 0;
@@ -172,28 +197,35 @@ void RotaryTable::updateVelocity(BOOL upvelocity) {
 	//Writing the corresponding velocity
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, sizeof(m_vel), (PBYTE)&m_vel, &m_abortcode);
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
-	bool moving = this->isMoving();
-	if (moving)
+	BOOL vel = this->getTabVelocity();
+	if (vel == m_vel)
 	{
-		std::cout << "Motor is in good state" << std::endl;
+		return true;
 	}
 	else
 	{
-		std::cout << "Motor has an internal error" << std::endl;
+		return false;
 	}
 }
 
-void RotaryTable::rotateRel(BOOL angular)
+void RotaryTable::rotateRel()
 {
-	m_vel = 1000;
-	m_increm = angular;
-	m_increm = (4096 * m_increm * 36.0 / (2 * M_PI));
+	m_continue = 0x04;
 	m_mode_motor = 0x77;
 	m_abortcode = 0;
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, sizeof(m_vel), (PBYTE)&m_vel, &m_abortcode);
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x12, sizeof(m_increm), (PBYTE)&m_increm, &m_abortcode);
+	//Maybe its needed after stopMovement()
+	//COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 1, sizeof(m_continue), (PBYTE)&m_continue, &m_abortcode);
 	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
 
+}
+
+void RotaryTable::rotateRelTwice()
+{
+	m_continue = 0x04;
+	m_mode_motor = 0xF7;
+	m_abortcode = 0;
+	//writing the continue param if motor has already moved
+	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
 }
 
 double RotaryTable::getAngVelocity()
@@ -202,10 +234,21 @@ double RotaryTable::getAngVelocity()
 	//BYTE m_vel;
 	DWORD len;
 	m_abortcode = 0;
-	COP_ReadSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, &len, (PBYTE)&m_vel, &m_abortcode);
-	double tableAngVel = (((m_vel / 36.0) * 2 * M_PI) / 60.0);
+	BOOL vel;
+	COP_ReadSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, &len, (PBYTE)&vel, &m_abortcode);
+	double tableAngVel = (((vel / 36.0) * 2 * M_PI) / 60.0);
 	return tableAngVel;
 }
+
+BOOL RotaryTable::getTabVelocity()
+{
+	DWORD len;
+	m_abortcode = 0;
+	BOOL tabvel;
+	COP_ReadSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, &len, (PBYTE)&tabvel, &m_abortcode);
+	return tabvel;
+}
+
 
 bool RotaryTable::isMoving(void)
 {
