@@ -37,8 +37,6 @@ protected:
 class RunningCandy: public WaitPattern
 {
 public:
-	RunningCandy();
-	~RunningCandy();
 	void placeCandy(Gantry* gantry, Tracker* tracker, RotaryTable* rotary, Colors maj, Colors min);
 	bool runCandy(Gantry* gantry);
 
@@ -57,8 +55,6 @@ private:
 class CandyTower : public WaitPattern
 {
 public:
-	CandyTower();
-	~CandyTower();
 	void buildTower(Gantry* gantry, Tracker* tracker, RotaryTable* rotary);
 
 
@@ -74,8 +70,6 @@ private:
 class CandyCircle : public WaitPattern
 {
 public:
-	CandyCircle();
-	~CandyCircle();
 	void buildCircle(Gantry* gantry, Tracker* tracker, RotaryTable * rotary);
 
 private:

@@ -50,14 +50,6 @@ bool WaitPattern::candiesToRotary(Gantry* gantry)
 }
 
 
-RunningCandy::RunningCandy()
-{
-}
-
-RunningCandy::~RunningCandy()
-{
-}
-
 void RunningCandy::placeCandy(Gantry* gantry, Tracker* tracker, RotaryTable* rotary, Colors maj, Colors min)
 {
 	pos_store.push_back(POS1);
@@ -138,14 +130,6 @@ bool RunningCandy::runCandy(Gantry* gantry)
 	return true;
 }
 
-CandyTower::CandyTower()
-{
-}
-
-CandyTower::~CandyTower()
-{
-}
-
 void CandyTower::buildTower(Gantry* gantry, Tracker* tracker, RotaryTable* rotary)
 {
 	pos_store.push_back(POS1);
@@ -182,15 +166,6 @@ void CandyTower::buildTower(Gantry* gantry, Tracker* tracker, RotaryTable* rotar
 
 		}
 	}
-}
-
-
-CandyCircle::CandyCircle()
-{
-}
-
-CandyCircle::~CandyCircle()
-{
 }
 
 void CandyCircle::buildCircle(Gantry* gantry, Tracker* tracker, RotaryTable* rotary)
