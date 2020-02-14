@@ -10,16 +10,16 @@ CML_NAMESPACE_USE();
 //3D fix position initialization
 const std::array<uunit, 3> Gantry::LURK_POS = { 138000, 0, 10000 };
 const std::array<uunit, 3> Gantry::HOME_POS = { 0,0,0 };
-const std::array<uunit, 3> Gantry::DROP_POS = { 0, 46350, 10000 };
-const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 110000, 46350, 20000 };
-const std::array<uunit, 3> Gantry::DISC_DROP = { 60000, 46350, 25000 };
-const std::array<uunit, 3> Gantry::STORAGE_BASE = { 9100, 0, 18000 };
+const std::array<uunit, 3> Gantry::DROP_POS = { 19800, 22800, 10000 };
+const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 95600, 46000, 20000 };
+const std::array<uunit, 3> Gantry::DISC_DROP = { 49000, 46350, 25500 };
+const std::array<uunit, 3> Gantry::STORAGE_BASE = { 17400, 0, 0 };
 //2D fix position initialization
 //@inner radius, @outer radius
 const std::array<uunit, 2> Gantry::DISC_RADIUS = { 8000, 46350 };
 //1D fix position initialization
-const uunit Gantry::CATCH_Z_HEIGHT = 25250;
-const std::map<Colors, uunit> Gantry::Y_STORAGE = {{GREEN, 69800}, {RED, 77100}, {YELLOW,84600}};
+const uunit Gantry::CATCH_Z_HEIGHT = 26100;
+const std::map<Colors, uunit> Gantry::Y_STORAGE = { {GREEN, 89280}, {RED, 81790}, {DARK_BLUE,74150}, {YELLOW, 66260},{BROWN, 58770},{LIGHT_BLUE, 51280} };
 //Half of Camera resolution
 double const Gantry::PIXEL_RADIUS = 540.0;
 
@@ -50,6 +50,7 @@ void Gantry::showerr(const Error* err, const char* msg)
 {
 	if (!err) return;
 	printf("Error: %s - %s\n", msg, err->toString());
+	system("pause");
 }
 
 
@@ -121,7 +122,7 @@ bool Gantry::initGantry()
 	err = amp[0].GetProfileConfig(profConf);
 	if (err)
 		return false;
-	err = link.SetMoveLimits(profConf.vel*0.75, profConf.acc*0.5, profConf.dec*0.5, profConf.jrk*0.5);
+	err = link.SetMoveLimits(profConf.vel, profConf.acc*0.75, profConf.dec*0.75, profConf.jrk*0.5);
 	if (err)
 		return false;
 	return true;
@@ -321,15 +322,15 @@ bool Gantry::fillTable(Colors color)
 		return false;
 	}
 	ProfileConfigTrap carefulCatch;
-	carefulCatch.acc = 5000;
-	carefulCatch.dec = 5000;
-	carefulCatch.vel = 5000;
-	carefulCatch.pos = CATCH_Z_HEIGHT;
+	carefulCatch.acc = 50000;
+	carefulCatch.dec = 50000;
+	carefulCatch.vel = 10000;
+	carefulCatch.pos = Gantry::CATCH_Z_HEIGHT;
 	link[TOOL_AXIS].SetupMove(carefulCatch);
-	link[TOOL_AXIS].SetPositionWarnWindow(80);
+	link[TOOL_AXIS].SetPositionWarnWindow(35);
 	EventAny posWarn(AMPEVENT_POSWARN);
 	link[TOOL_AXIS].StartMove();
-	err = link[TOOL_AXIS].WaitEvent(posWarn, 3000);
+	err = link[TOOL_AXIS].WaitEvent(posWarn, 6000);
 	if (!err) {
 		//std::cout << "performing quickstop" << std::endl;
 		link[TOOL_AXIS].HaltMove();
@@ -337,10 +338,15 @@ bool Gantry::fillTable(Colors color)
 		setValve(false);
 		setPump(true);
 		err = ptpMove(targetPos);
+		showerr(err, "firstpos");
 		setPump(false);
+		targetPos[0] = targetPos[0] + 10000;
+		err = ptpMove(targetPos);
+		showerr(err, "secondpos");
 		err = ptpMove(DISC_DROP);
+		showerr(err, "thirpos");
 		double xRandom = ((double)std::rand() / (RAND_MAX));
-		carefulCatch.vel = 15000;
+		carefulCatch.vel = 50000;
 		carefulCatch.pos = DISC_CENTER_POS[0] - DISC_RADIUS[1] / 2.0;
 		link[0].SetupMove(carefulCatch);
 		link[0].StartMove();
