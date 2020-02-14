@@ -238,8 +238,16 @@ void Tracker::autoConfigure(Colors color) {
         cv::Scalar meanLab(0.0, 0.0, 0.0);
 
         // tracks over a couple frames
-        for (int j = 0; j < 60; j++) {       
+        for (int j = 0; j < 60; j++) {   
             cv::Mat initialFrame = camera.grab(true);
+            try
+            {
+
+            }
+            catch (const NoCandyException&)
+            {
+
+            }
             Candy candy = getCandyOfColor(ANY, false);
             
             cv::Point center(candy.getCurrentPosition().getX() + centerX, candy.getCurrentPosition().getY() + centerY);
