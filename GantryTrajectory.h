@@ -1,41 +1,116 @@
-#ifndef GANTRYTRAJECTORY_H 
-#define GANTRYTRAJECTORY_H
-#include "CML.h"
-#include <corecrt_math_defines.h>
+#ifndef GANTRY_H 
+#define GANTRY_H
+
+#include <string>
+#include <CML.h>
+#include <can/can_ixxat_v3.h>
+#include <stdio.h>
+#include <iostream>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string>
+#include <filesystem>
+#include <math.h>   
+#include "GantryTrajectory.h"
 #include <array>
+#include <Color.h>
+#include <map>
+
+
+#define PI 3.14159265
 
 using namespace CML;
 
-class GantryTrajectory : public LinkTrajectory
-{
-private:
-	const static int NUMBER_POS_CALC = 200;
-	int posCounter = 0;
-	uunit xPos[NUMBER_POS_CALC];
-	uunit yPos[NUMBER_POS_CALC];
-	uunit zPos[NUMBER_POS_CALC];
-	uunit xVel[NUMBER_POS_CALC];
-	uunit yVel[NUMBER_POS_CALC];
-	uunit zVel[NUMBER_POS_CALC];
-	uunit trjTime[NUMBER_POS_CALC];
 
-	double angularAcc = 0;
-	double angularVel = 0;
-	double angular = M_PI;
-	double radius = 0;
-	double linVel = 0;
-	double linAcc = 0;
+class Gantry
+{
 public:
+	//Factor from mm to uunit
+	const static short POS_FACTOR = 160;
+
+	//Number of amplifiers
+	const static short NUM_AMP = 3;
+	const static short TOOL_AXIS = 2;
+	const static short VALVE_OUT_PIN = 2;
+	const static short PRESSURE_IN_PIN = 2;
+	const static short PUMP_OUT_PIN = 1;
+
+	//n-D fix Positions
+	const static std::array<uunit, NUM_AMP> LURK_POS;
+	const static std::array<uunit, NUM_AMP> HOME_POS;
+	const static std::array<uunit, NUM_AMP> DROP_POS;
+	const static std::array<uunit, NUM_AMP> DISC_CENTER_POS;
+	const static std::array<uunit, NUM_AMP> DISC_DROP;
+	const static std::array<uunit, NUM_AMP> STORAGE_BASE;
+	const static std::array<uunit, NUM_AMP> BUFFER_BASE;
+	
+	//2D fix Positions
+	const static std::array<uunit, 2> DISC_RADIUS;
+
+	//1D fix Positions
+	const static uunit CATCH_Z_HEIGHT;
+	const static uunit X_STORAGE;
+	const static std::map<Colors, uunit> Y_STORAGE;
+
 	//Constructor
-	GantryTrajectory();
-	~GantryTrajectory();
-	virtual const Error* StartNew(void);
-	virtual void Finish(void);
-	virtual int GetDim(void);
-	virtual bool UseVelocityInfo(void);
-	virtual const Error* NextSegment(uunit pos[], uunit vel[], uint8& time);
-	bool calcMovement(std::array<uunit, 3> actPos, double radius, double angular, double angularVelTarget,std::array<uunit, 3> targetPos, unsigned short maxTime);
-	void circle(double radius, double angular, double angularVel);
-	bool saveTrj();
+	Gantry();
+	~Gantry();
+
+	bool networkSetup();
+
+	bool attachAmpConifg(std::array<std::string, NUM_AMP> configPaths);
+	//Loads amplifier CME2 configuration files and homes gantry
+	bool initGantry();
+	//Moves to lurk position 
+	bool prepareCatch();
+	//Catch candy start at lurk position
+	bool catchRotary(double ang, double angVel, double pixelRadius, std::array<uunit, 3> dropPos, unsigned short maxTime=3000, bool debugMotion = false);
+
+	//Catches candy from none moving point
+	bool catchStatic (std::array<uunit, NUM_AMP> candyPos, std::array<uunit, NUM_AMP> targetPos);
+
+	std::array<uunit, Gantry::NUM_AMP> getPos();
+
+	bool fillTable(Colors color);
+
+	bool handleError(const Error* err);
+
+private:
+	void showerr(const Error* err, const char* msg);
+	//IXXAT USB to CAN adapter
+	IxxatCANV3 can;
+	//Upper level Can object
+	CanOpen canOpen;
+	// We use three Amp objects to control the three amplifiers in the system.
+	Amp amp[NUM_AMP];
+	//Create linkage object to handle the three axes simulatanously
+	
+		//Point Object for Point to point moves
+	//Point<3> ampTargetPos;
+
+	Linkage link;
+	//Linkage config
+	LinkSettings linkCfg;
+	//Trajectory object
+	GantryTrajectory trj;
+	//CAN NodeIDs by the order X,Y,Z axis
+	const short CAN_AXIS[NUM_AMP] = { 2, 3, 1 };
+	//Paths to the CME2 generated config files
+	std::array<std::string, NUM_AMP> ampConfigPath;
+	//Home each axis seperatly due to may occuring under voltage
+	const Error *homeAxis(unsigned short maxTime);
+	//Trajectory planing with given angular velocity and angular of the disc
+	//Method to perform point to point moves with S-Curve profile
+
+	//The half of the Camera resolution 1080/2
+	const static double PIXEL_RADIUS;
+
+	const Error *setPump(bool state);
+	const Error *setValve(bool state);
+	const Error *ptpMove(std::array<uunit, NUM_AMP> targetPos, unsigned short maxTime = 5000);
+	bool getCatched();
+
+	void gantryLog(std::vector <std::string> message);
+
 };
 #endif
