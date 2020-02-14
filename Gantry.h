@@ -42,8 +42,13 @@ public:
 	const static std::array<uunit, NUM_AMP> DISC_CENTER_POS;
 	const static std::array<uunit, NUM_AMP> DISC_DROP;
 	const static std::array<uunit, NUM_AMP> STORAGE_BASE;
+<<<<<<< HEAD
 	const static std::array<uunit, NUM_AMP> WAIT_PAT_BASE;
 	const static std::array<uunit, NUM_AMP> WAIT_PAT_BUFFER;
+=======
+	const static std::array<uunit, NUM_AMP> BUFFER_BASE;
+	
+>>>>>>> 89993a44bddb2045bdedbce595bf1d483471153b
 	//2D fix Positions
 	const static std::array<uunit, 2> DISC_RADIUS;
 
