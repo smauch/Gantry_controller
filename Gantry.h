@@ -25,6 +25,9 @@ using namespace CML;
 class Gantry
 {
 public:
+	//Factor from mm to uunit
+	const static short POS_FACTOR = 160;
+
 	//Number of amplifiers
 	const static short NUM_AMP = 3;
 	const static short TOOL_AXIS = 2;
@@ -39,7 +42,8 @@ public:
 	const static std::array<uunit, NUM_AMP> DISC_CENTER_POS;
 	const static std::array<uunit, NUM_AMP> DISC_DROP;
 	const static std::array<uunit, NUM_AMP> STORAGE_BASE;
-	
+	const static std::array<uunit, NUM_AMP> WAIT_PAT_BASE;
+	const static std::array<uunit, NUM_AMP> WAIT_PAT_BUFFER;
 	//2D fix Positions
 	const static std::array<uunit, 2> DISC_RADIUS;
 
