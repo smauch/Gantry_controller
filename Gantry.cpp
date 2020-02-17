@@ -14,8 +14,8 @@ const std::array<uunit, 3> Gantry::DROP_POS = { 19800, 22800, 10000 };
 const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 95600, 46000, 20000 };
 const std::array<uunit, 3> Gantry::DISC_DROP = { 49000, 46350, 25500 };
 const std::array<uunit, 3> Gantry::STORAGE_BASE = { 17400, 0, 0 };
-const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 37000, 17000, 0 };
-const std::array<uunit, 3> Gantry::WAIT_PAT_BUFFER = { 57000, 2000, 0 };
+const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 37000, 17000, 25000 };
+const std::array<uunit, 3> Gantry::WAIT_PAT_BUFFER = { 57000, 2000, 25000 };
 //2D fix position initialization
 //@inner radius, @outer radius
 const std::array<uunit, 2> Gantry::DISC_RADIUS = { 8000, 46350 };
@@ -208,13 +208,10 @@ bool Gantry::catchRotary(double ang, double angVel, double pixelRadius, std::arr
 	if (getCatched())
 	{
 		setValve(true);
-		err = ptpMove(LURK_POS);
 		return true;
 	}
 	else
 	{
-		setValve(true);
-		err = ptpMove(LURK_POS);
 		return false;
 	}
 }

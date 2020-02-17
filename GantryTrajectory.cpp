@@ -131,9 +131,9 @@ bool GantryTrajectory::calcMovement(std::array<uunit, 3> actPos, double radius, 
 	ang = ang + angVel * 1.4;
 
 	uunit splPointX[2], splPointY[2];
-	uunit splPointZ[3] = { actPos[2], Gantry::CATCH_Z_HEIGHT, dropPos[2] };
+	uunit splPointZ[4] = { actPos[2], Gantry::CATCH_Z_HEIGHT, actPos[2], dropPos[2] };
 	uunit splVelX[2], splVelY[2];
-	uunit splVelZ[3] = { 0,0,0 };
+	uunit splVelZ[4] = { 0,0,0,0 };
 	double time[5] = { 0, 49, 99, 149, 199 };
 
 	alglib::spline1dinterpolant hermiteX, hermiteY, hermiteZ;
@@ -205,15 +205,20 @@ bool GantryTrajectory::calcMovement(std::array<uunit, 3> actPos, double radius, 
 	splVelX[1] = 0;
 	splVelY[1] = 0;
 
+
 	realT3.attach_to_ptr(2, &(time[3]));
+	realPointZ.attach_to_ptr(2, &(splPointZ[2]));
+	realVelZ.attach_to_ptr(2, &(splVelZ[2]));
+
 	alglib::spline1dbuildhermite(realT3, realPointX, realVelX, hermiteX);
 	alglib::spline1dbuildhermite(realT3, realPointY, realVelY, hermiteY);
+	alglib::spline1dbuildhermite(realT2, realPointZ, realVelZ, hermiteZ);
 
 	for (int t = 150; t < 200; t++)
 	{
 		xPos[t] = alglib::spline1dcalc(hermiteX, t);
 		yPos[t] = alglib::spline1dcalc(hermiteY, t);
-		zPos[t] = dropPos[2];
+		zPos[t] = alglib::spline1dcalc(hermiteZ, t);
 		trjTime[t] = stepTime * 1000;
 	}
 	trjTime[NUMBER_POS_CALC - 1] = 0;
