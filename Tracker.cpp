@@ -1,6 +1,6 @@
 
 #include "Tracker.h"
-
+#include <QtCore/QDebug>
 
 /**
  * constructor of tracker
@@ -178,7 +178,8 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int r
 
         Colors detectedColor = detectColorOfCandy(initialFrame(boundingBox));
         if (detectedColor == color || color == ANY) {
-            Coordinates center(boundingBox.x + (boundingBox.width / 2.0) - centerX, boundingBox.y + (boundingBox.height / 2.0) - centerY);
+            cv::Point offset = refineCenter(initialFrame(boundingBox));
+            Coordinates center(boundingBox.x + offset.x - centerX, boundingBox.y + offset.y - centerY);
             Coordinates reRotatedCenter = center.rotate(-rotationAngle);
             Candy candy(detectedColor, reRotatedCenter);
 
@@ -195,6 +196,62 @@ std::vector<Candy> Tracker::getCandiesInFrame(Colors color, cv::Mat image, int r
     }
 
     return detectedCandies;
+}
+
+cv::Point Tracker::refineCenter(cv::Mat roi) {
+    cv::Mat labRoi;
+    cv::cvtColor(roi, labRoi, cv::COLOR_BGR2GRAY);
+
+    cv::Mat threshed;
+    cv::inRange(labRoi, (0, 0, 0), (200, 200, 200), threshed);
+
+    cv::Moments mom = cv::moments(threshed);
+
+    cv::Point refinedCenter;
+    if (mom.m00 == 0) {
+        refinedCenter = cv::Point(roi.size[0] / 2, roi.size[1] / 2);
+    }
+    else {
+        refinedCenter = cv::Point(mom.m10 / mom.m00, mom.m01 / mom.m00);
+    }
+
+    return refinedCenter;
+}
+
+int Tracker::getCenterX()
+{
+    return this->centerX;
+}
+
+int Tracker::getCenterY()
+{
+    return this->centerY;
+}
+
+int Tracker::getInnerR()
+{
+    return this->innerRadius;
+}
+
+int Tracker::getOuterR()
+{
+    return this->outerRadius;
+}
+
+
+Tracker Tracker::getTrackerFromJson(std::string filepath, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile)
+{
+    std::string line;
+    std::ifstream jsonfile(filepath);
+    if (jsonfile.is_open()) {
+        std::getline(jsonfile, line);
+    }
+    jsonfile.close();
+    std::string err;
+    json11::Json json = json11::Json::parse(line, err);
+    Tracker tracker;
+    tracker = Tracker(json, camera, colorTrackers, cascadeFile);
+    return tracker;
 }
 
 /**
@@ -236,19 +293,19 @@ void Tracker::autoConfigure(Colors color) {
     
         int i = static_cast<Colors> (color);
         cv::Scalar meanLab(0.0, 0.0, 0.0);
-
+        Candy candy;
         // tracks over a couple frames
         for (int j = 0; j < 60; j++) {   
             cv::Mat initialFrame = camera.grab(true);
             try
             {
-
+                candy = getCandyOfColor(ANY, false);
             }
             catch (const NoCandyException&)
             {
-
+                qDebug() << "Found no candy";
             }
-            Candy candy = getCandyOfColor(ANY, false);
+            
             
             cv::Point center(candy.getCurrentPosition().getX() + centerX, candy.getCurrentPosition().getY() + centerY);
             cv::Rect box(center.x - 30, center.y - 30, 60, 60);
@@ -259,10 +316,10 @@ void Tracker::autoConfigure(Colors color) {
 
             cv::cvtColor(roi, roiLab, cv::COLOR_BGR2Lab);
             meanLab = meanLab + cv::mean(roiLab) / 60.0;
-            std::cout << j << std::endl;
+            qDebug() << "Pictures proecessed" << j;
         }
 
-        std::cout << meanLab << std::endl;
+        qDebug() << "Final value " << meanLab[0] << meanLab[1] << meanLab[2];
 
         colorTrackers[i].setLightness(meanLab[0]);
         colorTrackers[i].setAComponent(meanLab[1]);
@@ -283,8 +340,6 @@ double Tracker::detectAngle(cv::Mat image) {
     int treshhold = 50;
     int minLineLength = 0;
     int maxLineGap = 20;
-
-    cv::namedWindow("asd", cv::WINDOW_NORMAL);
 
     cv::Mat blurred;
     cv::GaussianBlur(image, blurred, cv::Size(9, 9), 0, 0);
@@ -323,12 +378,7 @@ double Tracker::detectAngle(cv::Mat image) {
         if ((longestLine[3] - longestLine[1]) > 0)
             angleInDegrees *= -1;
 
-        std::cout << angleInDegrees << std::endl;
     }
-    /*
-    cv::imshow("asd", image);
-    cv::waitKey(0);
-    cv::destroyAllWindows();
-    */
+
     return angleInDegrees;
 }

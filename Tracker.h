@@ -68,11 +68,20 @@ class Tracker {
         json11::Json to_json() const;
         // configures the color-trackers
         void autoConfigure(Colors color);
+        // refines center of a given candy
+        cv::Point refineCenter(cv::Mat roi);
+
+        // getter tracker settings
+        int getCenterX();
+        int getCenterY();
+        int getInnerR();
+        int getOuterR();
 
         // getter colorTrackers
         std::vector<ColorTracker> getColorTrackers() { return this->colorTrackers; }
 
-        
+        // creates a vector of ColorTrackers from a single json file
+        static Tracker getTrackerFromJson(std::string filepath, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile);
 };
 
 #endif
