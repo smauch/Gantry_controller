@@ -19,6 +19,7 @@ Tracker::Tracker(int centerX, int centerY, int outerRadius, int innerRadius, Cam
     this->outerRadius = outerRadius;
     this->innerRadius = innerRadius;
     this->camera = camera;
+    this->colorTrackers = colorTrackers;
     this->classifier = cv::CascadeClassifier(cascadeFile);
 }
 
@@ -43,10 +44,10 @@ Tracker::Tracker(json11::Json json, Camera camera, std::vector<ColorTracker> col
  * default constructor
  */
 Tracker::Tracker() {
-    this->centerX = 0;
-    this->centerY = 0;
-    this->outerRadius = 0;
-    this->innerRadius = 0;
+    this->centerX = 540;
+    this->centerY = 540;
+    this->outerRadius = 540;
+    this->innerRadius = 10;
     this->camera = (Camera) NULL;
     this->classifier = cv::CascadeClassifier();
 }
