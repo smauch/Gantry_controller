@@ -72,7 +72,7 @@ void RunningCandy::placeCandy(Gantry* gantry, Tracker* tracker, RotaryTable* rot
 				Candy candy = tracker->getCandyOfColor(maj, false);
 				auto end = std::chrono::high_resolution_clock::now();
 				auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-				double angVel = rotary->getAngVelocity();
+				double angVel = rotary->getTableAngVel();
 				candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVel / 1000 * 180 / M_PI * elapsed));
 				catched = gantry->catchRotary(angVel, candy.getCurrentPosition().getAngle(), candy.getCurrentPosition().getR(), *it);
 
@@ -98,7 +98,7 @@ void RunningCandy::placeCandy(Gantry* gantry, Tracker* tracker, RotaryTable* rot
 				Candy candy = tracker->getCandyOfColor(min, false);
 				auto end = std::chrono::high_resolution_clock::now();
 				auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-				double angVel = rotary->getAngVelocity();
+				double angVel = rotary->getTableAngVel();
 				candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVel / 1000 * 180 / M_PI * elapsed));
 				catched = gantry->catchRotary(angVel, candy.getCurrentPosition().getAngle(), candy.getCurrentPosition().getR(), *it);
 
@@ -149,7 +149,7 @@ void CandyTower::buildTower(Gantry* gantry, Tracker* tracker, RotaryTable* rotar
 			Candy candy = tracker->getCandyOfColor(nextCandy, false);
 			auto end = std::chrono::high_resolution_clock::now();
 			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-			double angVel = rotary->getAngVelocity();
+			double angVel = rotary->getTableAngVel();
 			candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVel / 1000 * 180 / M_PI * elapsed));
 			catched = gantry->catchRotary(angVel, candy.getCurrentPosition().getAngle(), candy.getCurrentPosition().getR(), *it);
 
@@ -193,7 +193,7 @@ void CandyCircle::buildCircle(Gantry* gantry, Tracker* tracker, RotaryTable* rot
 			Candy candy = tracker->getCandyOfColor(nextCandy, false);
 			auto end = std::chrono::high_resolution_clock::now();
 			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-			double angVel = rotary->getAngVelocity();
+			double angVel = rotary->getTableAngVel();
 			candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVel / 1000 * 180 / M_PI * elapsed));
 			catched = gantry->catchRotary(angVel, candy.getCurrentPosition().getAngle(), candy.getCurrentPosition().getR(), *it);
 
