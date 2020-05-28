@@ -26,6 +26,7 @@ extern "C"
 
 #include "rotarytable.h"
 #include <iostream> 
+#include <QtCore/QDebug>
 
 
 
@@ -35,7 +36,6 @@ RotaryTable::RotaryTable()
 
 bool RotaryTable::initNetwork()
 {
-
 	//-----------This Constructor initalizes the can-board, the interface and adding the node to the can-network and prepares the motor for the rotations---------------------
 
 	//Initializing the board; in case of any error, checking the canopen masterapi manual 2.2
@@ -44,7 +44,6 @@ bool RotaryTable::initNetwork()
 	m_boardID = COP_1stBOARD;
 	m_canline = COP_FIRSTLINE;
 	m_res = 0;
-
 
 	//Initializing the interface
 	m_baudtable = COP_k_BAUD_CIA;
@@ -58,207 +57,199 @@ bool RotaryTable::initNetwork()
 	m_GuardHeartbeatTime = 500;
 	m_lifetimefactor = 0;
 	m_node_no_slave = 127;
-
-	
-
+	m_sdo_no = COP_k_DEFAULT_SDO;
+	m_mode = COP_k_NO_BLOCKTRANSFER;
 
 	//Initializsation of board
 	m_res = COP_InitBoard(&m_Board_Hdl, &m_boardtype, &m_boardID, m_canline);
-	if (m_res != BER_k_OK)
-	{
+	if (m_res) {
 		return false;
 	}
-	else
-	{
-		//Initialization of interface
-		m_res = COP_InitInterface(m_Board_Hdl, m_baudtable, m_baudrate, m_node_no_master, m_hbtime, m_AddFeatures);
-	}
-
-	if (m_res != COP_k_OK)
-	{
+	m_res = COP_InitInterface(m_Board_Hdl, m_baudtable, m_baudrate, m_node_no_master, m_hbtime, m_AddFeatures);
+	if (m_res) {
 		return false;
 	}
-	else
-	{
-		//Add of node to the can network
-		m_res = COP_AddNode(m_Board_Hdl, m_node_no_slave, m_NgOrHb, m_GuardHeartbeatTime + 100, m_lifetimefactor);
-	}
-	if (m_res != COP_k_OK)
-	{
+	m_res = COP_AddNode(m_Board_Hdl, m_node_no_slave, m_NgOrHb, m_GuardHeartbeatTime + 100, m_lifetimefactor);
+	if (m_res) {
 		return false;
 	}
-	else
-	{
-		WORD idx_vector[2] = { 0x4000, 0x4150 };
-		BYTE subidx_vector[2] = { 2, 1 };
-		BOOL value_vector[2] = { 1, 1, };
-		SHORT results[2];
-		m_sdo_no = COP_k_DEFAULT_SDO;
-		m_mode = COP_k_NO_BLOCKTRANSFER;
-		m_abortcode = 0;
-		for (auto i = 0; i < 2; i++)
-		{
-			m_res = COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, idx_vector[i], subidx_vector[i], sizeof(value_vector[i]), (PBYTE)&value_vector[i], &m_abortcode);
-			if (m_res != 0)
-			{
-				return false;
-			}
-		}
-	}
-
 	return true;
+}
 
+bool RotaryTable::initMotor()
+{
+	if (!writeSDO(0x4000, 0x02, 0x72)) {
+		return false;
+	}
+	// Clear error
+	if (! writeSDO(0x4000, 0x02, 0x01)) {
+		return false;
+	}
+	// Check Error register
+	int err = 0;
+	if (! checkErr(err)) {
+		return false;
+	}
+	if (err) {
+		return false;
+	}
+	// Restore default parameters
+	if (! writeSDO(0x4000, 0x01, 0x82)) {
+		return false;
+	}
+	return true;
+}
+
+bool RotaryTable::checkErr(int &err)
+{
+	if (!readSDO(0x4001, 0x01, err)) {
+		return false;
+	}
+	return true;
 }
 
 /*************************Function for setting the velocity of the servo motor in U/min*************************************************/
-void RotaryTable::setVelocity(BOOL velocity, BOOL v_acc, BOOL v_dec) {
-	m_vel = velocity;
-
-	m_sdo_no = COP_k_DEFAULT_SDO;
-	m_mode = COP_k_NO_BLOCKTRANSFER;
-	
-	//good values for vel_acc and vel_dec is 1000
-	m_abortcode = 0;
-	m_vel_acc_dv = v_acc;
-	m_vel_acc_dt = 5000;
-	m_vel_dec_dv = v_dec;
-	m_vel_dec_dt = 5000;
-
-	/**************Setting the values for acceleration/deceleration*****************/
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4340, 1, sizeof(m_vel_acc_dv), (PBYTE)&m_vel_acc_dv, &m_abortcode);
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4341, 1, sizeof(m_vel_acc_dt), (PBYTE)&m_vel_acc_dt, &m_abortcode);
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4342, 1, sizeof(m_vel_dec_dv), (PBYTE)&m_vel_dec_dv, &m_abortcode);
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4343, 1, sizeof(m_vel_dec_dt), (PBYTE)&m_vel_dec_dt, &m_abortcode);
-
-	//Writing the corresponding velocity
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, sizeof(m_vel), (PBYTE)&m_vel, &m_abortcode);
-
-	
-}
-
-void RotaryTable::setRelative(float angular, BOOL velocity)
-{
-	m_continue = 0x04;
-	m_vel = velocity;
-	//m_increm = angular;
-	angular = (4096 * angular * 36 / (2 * M_PI));
-	m_increm = int(angular);
-	m_mode_motor = 0x77;
-	m_abortcode = 0;
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, sizeof(m_vel), (PBYTE)&m_vel, &m_abortcode);
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x12, sizeof(m_increm), (PBYTE)&m_increm, &m_abortcode);
-
-}
-
-bool RotaryTable::startMovement() {
-
-	m_abortcode = 0;
-	m_mode_motor = 0x74;
-	m_continue = 0x04;
-	//writing the continue param if motor has already moved
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 1, sizeof(m_continue), (PBYTE)&m_continue, &m_abortcode);
-	//Starting motor
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
-	BOOL vel = this->getTabVelocity();
-	if (m_vel == vel)
-	{
-		return true;
-	}
-	else
-	{
+bool RotaryTable::startVelMode(int velocity, int acceleration, int decceleration) {
+	// Clear error
+	if (!writeSDO(0x4000, 0x02, 0x01)) {
 		return false;
 	}
-
+	if (! writeSDO(0x4000, 0x02, 0)) {
+		return false;
+	}
+	if (! writeSDO(0x4000, 0x11, velocity)) {
+		return false;
+	}
+	if (! writeSDO(0x4341, 1, acceleration)) {
+		return false;
+	}
+	if (!writeSDO(0x4343, 1, decceleration)) {
+		return false;
+	}
+	if (! writeSDO(0x4000, 0x02, 0x74)) {
+		return false;
+	}
+	
+	return true;
 }
+
+bool RotaryTable::moveRel(float angular, int velocity)
+{
+	// Clear error
+	if (!writeSDO(0x4000, 0x02, 0x01)) {
+		return false;
+	}
+	int increment = int(4096 * angular * 36 / (2 * M_PI));
+	if (!writeSDO(0x4000, 0x02, 0)) {
+		return false;
+	}
+	if (! writeSDO(0x4000, 0x12, increment)) {
+		return false;
+	}
+	if (! writeSDO(0x4000, 0x11, velocity)) {
+		return false;
+	}
+	if (!writeSDO(0x4000, 0x02, 0x77)) {
+		return false;
+	}
+	return true;
+}
+
 
 bool RotaryTable::stopMovement(void) {
-
-	m_abortcode = 0;
-	m_mode_motor = 0x03;
-	//Stopping motor
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 1, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
-	BOOL vel = this->getTabVelocity();
-	if (vel == 0)
-	{
-		return true;
-	}
-	else
-	{
+	if (!writeSDO(0x4000, 0x02, 0)) {
 		return false;
 	}
-
-}
-
-bool RotaryTable::updateVelocity(BOOL upvelocity) {
-
-	m_vel = upvelocity;
-	m_abortcode = 0;
-	m_mode_motor = 0x74;
-	//Writing the corresponding velocity
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, sizeof(m_vel), (PBYTE)&m_vel, &m_abortcode);
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
-	BOOL vel = this->getTabVelocity();
-	if (vel == m_vel)
-	{
-		return true;
-	}
-	else
-	{
+	if (!writeSDO(0x4000, 0x11, 0)) {
 		return false;
 	}
+	if (!writeSDO(0x4000, 0x02, 0x74)) {
+		return false;
+	}
+	// Clear error
+	if (!writeSDO(0x4000, 0x02, 0x01)) {
+		return false;
+	}
+	return true;
 }
 
-void RotaryTable::rotateRel()
+double RotaryTable::getTableAngVel()
 {
-	m_continue = 0x04;
-	m_mode_motor = 0x77;
-	m_abortcode = 0;
-	//Maybe its needed after stopMovement()
-	//COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 1, sizeof(m_continue), (PBYTE)&m_continue, &m_abortcode);
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
-
+	int rpm;
+	readSDO(0x4A04, 0x02, rpm);
+	double angVel = (((rpm / 36.0) * 2 * M_PI) / 60.0);
+	return angVel;
 }
 
-void RotaryTable::rotateRelTwice()
+int RotaryTable::getMotorVel()
 {
-	m_continue = 0x04;
-	m_mode_motor = 0xF7;
-	m_abortcode = 0;
-	//writing the continue param if motor has already moved
-	COP_WriteSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 2, sizeof(m_mode_motor), (PBYTE)&m_mode_motor, &m_abortcode);
-}
-
-double RotaryTable::getAngVelocity()
-{
-	//DWORD *len;
-	//BYTE m_vel;
-	DWORD len;
-	m_abortcode = 0;
-	BOOL vel;
-	COP_ReadSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, &len, (PBYTE)&vel, &m_abortcode);
-	double tableAngVel = (((vel / 36.0) * 2 * M_PI) / 60.0);
-	return tableAngVel;
-}
-
-BOOL RotaryTable::getTabVelocity()
-{
-	DWORD len;
-	m_abortcode = 0;
-	BOOL tabvel;
-	COP_ReadSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4000, 0x11, &len, (PBYTE)&tabvel, &m_abortcode);
-	return tabvel;
+	int rpm;
+	readSDO(0x4A04, 0x02, rpm);
+	return rpm;
 }
 
 
 bool RotaryTable::isMoving(void)
 {
-	DWORD len;
-	m_abortcode = 0;	
-	COP_ReadSDO(m_Board_Hdl, m_node_no_slave, m_sdo_no, m_mode, 0x4001, 1, &len, (PBYTE)&m_status, &m_abortcode);//& 0x04;
-	if (m_status == 0) {
+	int status = 0;
+	readSDO(0x4002, 0x01, status);
+	bool moving = status & 0x04;
+	return moving;
+}
+
+bool RotaryTable::startRandMove(int maxVel)
+{
+	double rand = ((double)std::rand() / (RAND_MAX));
+	int vel = (rand - 0.5) * maxVel * 2;
+	if (abs(vel) < 200) {
+		if (vel < 0) {
+			vel -= 400;
+		}
+		else {
+			vel += 400;
+		}
+	}
+	bool sucess = startVelMode(vel);
+	return sucess;
+}
+
+bool RotaryTable::waitTargetReached(int timeout)
+{
+	int statusword = 0;
+	bool trReached = false;
+	qDebug() << "entering while attention";
+	while (! trReached) {
+		readSDO(0x6041, 0x0, statusword);
+		trReached = statusword & 0x400;
+	}
+	qDebug() << "leave while attention";
+	return true;
+}
+
+bool RotaryTable::writeSDO(WORD index, BYTE subindex, BOOL value)
+{
+	COP_SetSDOTimeOut(this->m_Board_Hdl, 2000);
+	short err = 0;
+	DWORD txlen = sizeof(value);
+	DWORD abortcode = 0;
+	err = COP_WriteSDO(this->m_Board_Hdl, this->m_node_no_slave, this->m_sdo_no, this->m_mode, index, subindex, txlen, (PBYTE)&value, &abortcode);
+	
+	if (err || abortcode) {
 		return true;
 	}
-	else { return false; }
+	return true;
+}
+
+bool RotaryTable::readSDO(WORD index, BYTE subindex, int& value)
+{
+	short err;
+	DWORD txlen;
+	DWORD abortcode;
+	err = COP_ReadSDO(this->m_Board_Hdl, this->m_node_no_slave, this->m_sdo_no, this->m_mode, index, subindex, &txlen, (PBYTE)&value, &abortcode);
+	if (err || abortcode) {
+		return false;
+	}
+	return true;
 }
 
 RotaryTable::~RotaryTable(){
