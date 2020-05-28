@@ -13,6 +13,7 @@
 #include <math.h>   
 #include "GantryTrajectory.h"
 #include <array>
+#include <tuple>
 #include <Color.h>
 #include <map>
 
@@ -34,6 +35,8 @@ public:
 	const static short VALVE_OUT_PIN = 2;
 	const static short PRESSURE_IN_PIN = 2;
 	const static short PUMP_OUT_PIN = 1;
+	//Home order
+	const static std::array<unsigned short, NUM_AMP> HOME_ORDER;
 
 	//n-D fix Positions
 	const static std::array<uunit, NUM_AMP> LURK_POS;
@@ -42,6 +45,7 @@ public:
 	const static std::array<uunit, NUM_AMP> DISC_CENTER_POS;
 	const static std::array<uunit, NUM_AMP> DISC_DROP;
 	const static std::array<uunit, NUM_AMP> STORAGE_BASE;
+	const static std::array<uunit, NUM_AMP> STORAGE_SAFE_POS;
 	const static std::array<uunit, NUM_AMP> WAIT_PAT_BASE;
 	const static std::array<uunit, NUM_AMP> WAIT_PAT_BUFFER;
 	//2D fix Positions
@@ -58,13 +62,13 @@ public:
 
 	bool networkSetup();
 
-	bool attachAmpConifg(std::array<std::string, NUM_AMP> configPaths);
+	void attachAmpConifg(std::array<std::string, NUM_AMP> configPaths);
 	//Loads amplifier CME2 configuration files and homes gantry
-	bool initGantry();
+	bool initGantry(unsigned int maxTimeHoming);
 	//Moves to lurk position 
 	bool prepareCatch();
 	//Catch candy start at lurk position
-	bool catchRotary(double ang, double angVel, double pixelRadius, std::array<uunit, 3> dropPos, unsigned short maxTime=3000, bool debugMotion = false);
+	bool catchRotary(double ang, double angVel, float factorRadius, std::array<uunit, 3> dropPos, unsigned short maxTime=6000, bool debugMotion = false);
 
 	//Catches candy from none moving point
 	bool catchStatic (std::array<uunit, NUM_AMP> candyPos, std::array<uunit, NUM_AMP> targetPos);
@@ -73,10 +77,17 @@ public:
 
 	bool fillTable(Colors color);
 
-	bool handleError(const Error* err);
+	bool placeOnTable(std::array<uunit, NUM_AMP> candyPos);
+
 
 private:
-	void showerr(const Error* err, const char* msg);
+	//Global Status
+
+	//Global error object
+	const Error* globalErr = 0;
+
+	bool handleErr(const Error* err);
+
 	//IXXAT USB to CAN adapter
 	IxxatCANV3 can;
 	//Upper level Can object
@@ -84,30 +95,29 @@ private:
 	// We use three Amp objects to control the three amplifiers in the system.
 	Amp amp[NUM_AMP];
 	//Create linkage object to handle the three axes simulatanously
-	
-		//Point Object for Point to point moves
-	//Point<3> ampTargetPos;
-
-	Linkage link;
+	CML::Linkage link;
 	//Linkage config
-	LinkSettings linkCfg;
-	//Trajectory object
-	GantryTrajectory trj;
+	CML::LinkSettings linkCfg;
+	//Profile config
+	std::array<ProfileConfig, NUM_AMP> profConf;
+	//Software position limits
+	std::array<SoftPosLimit, NUM_AMP> posLimit;
 	//CAN NodeIDs by the order X,Y,Z axis
+	const std::map<std::string, short> AMP_MAP = { {"X-Axis",0}, {"Y-Axis",1}, {"Z-Axis",2} };
 	const short CAN_AXIS[NUM_AMP] = { 2, 3, 1 };
 	//Paths to the CME2 generated config files
 	std::array<std::string, NUM_AMP> ampConfigPath;
 	//Home each axis seperatly due to may occuring under voltage
-	const Error *homeAxis(unsigned short maxTime);
+	const Error *homeAxis(unsigned int maxTime, std::array<unsigned short, NUM_AMP> axisOrder);
 	//Trajectory planing with given angular velocity and angular of the disc
 	//Method to perform point to point moves with S-Curve profile
-
+	GantryTrajectory trj;
 	//The half of the Camera resolution 1080/2
 	const static double PIXEL_RADIUS;
 
-	const Error *setPump(bool state);
+	bool setPump(bool state, short mode=0);
 	const Error *setValve(bool state);
-	const Error *ptpMove(std::array<uunit, NUM_AMP> targetPos, unsigned short maxTime = 5000);
+	bool ptpMove(std::array<uunit, NUM_AMP> targetPos, unsigned short maxTime = 5000);
 	bool getCatched();
 
 	void gantryLog(std::vector <std::string> message);

@@ -7,6 +7,7 @@
 #include <fstream>
 #include <filesystem>
 #include <direct.h>
+#include <stdexcept>
 
 
 CML_NAMESPACE_USE();
@@ -14,6 +15,7 @@ CML_NAMESPACE_USE();
 GantryTrajectory::GantryTrajectory()
 {
 }
+
 
 GantryTrajectory::~GantryTrajectory()
 {
@@ -92,7 +94,7 @@ void GantryTrajectory::circle(double radius, double angular, double angularVelTa
 
 }
 
-bool GantryTrajectory::saveTrj()
+bool GantryTrajectory::saveTrj(double rad, double ang, double angVel)
 {
 	char rootDir[] = ".\\log";
 	if (!std::filesystem::exists(rootDir)) {
@@ -103,10 +105,16 @@ bool GantryTrajectory::saveTrj()
 	std::ofstream xFile;
 	std::ofstream yFile;
 	std::ofstream zFile;
+	std::ofstream detectedCandyFile;
 	xFile.open(".\\log\\xPos.txt", std::ios::out);
 	yFile.open(".\\log\\yPos.txt", std::ios::out);
 	zFile.open(".\\log\\zPos.txt", std::ios::out);
+	detectedCandyFile.open(".\\log\\detectedCandyFile.txt", std::ios::out);
 	if (xFile.is_open() && yFile.is_open() && zFile.is_open()) {
+		detectedCandyFile << "Angular" << ang << std::endl;
+		detectedCandyFile << "AngVel" << angVel << std::endl;
+		detectedCandyFile << "radius" << rad << std::endl;
+
 		for (int count = 0; count < NUMBER_POS_CALC; count++) {
 			xFile << xPos[count] << std::endl;
 			yFile << yPos[count] << std::endl;
@@ -117,18 +125,23 @@ bool GantryTrajectory::saveTrj()
 		zFile.close();
 	}
 	else {
-		return false;
+		throw std::runtime_error("File not written");
 	}
+}
+
+void GantryTrajectory::attachMoveLimits(std::array<SoftPosLimit, 3> posLimit)
+{
+	this->posLimit = posLimit;
 }
 
 
 
 
-bool GantryTrajectory::calcMovement(std::array<uunit, 3> actPos, double radius, double ang, double angVel, std::array<uunit, 3> dropPos, unsigned short maxTime)
+void GantryTrajectory::calcMovement(std::array<uunit, 3> actPos, double radius, double ang, double angVel, std::array<uunit, 3> dropPos, unsigned short maxTime)
 {
-	double stepTime = 0.025;
+	double stepTime = 0.015;
 	// Predict
-	ang = ang + angVel * 1.4;
+	ang = ang + angVel * 0.9;
 
 	uunit splPointX[2], splPointY[2];
 	uunit splPointZ[4] = { actPos[2], Gantry::CATCH_Z_HEIGHT, actPos[2], dropPos[2] };
@@ -138,16 +151,18 @@ bool GantryTrajectory::calcMovement(std::array<uunit, 3> actPos, double radius, 
 
 	alglib::spline1dinterpolant hermiteX, hermiteY, hermiteZ;
 
-	alglib::real_1d_array realPointX, realPointY, realPointZ;
-	alglib::real_1d_array realVelX, realVelY, realVelZ;
+	alglib::real_1d_array realPointX, realPointY, realPointZ, realPointZ2;
+	alglib::real_1d_array realVelX, realVelY, realVelZ, realVelZ2;
 	alglib::real_1d_array realT1, realT2, realT3;
 
 	realPointX.attach_to_ptr(2, &(splPointX[0]));
 	realPointY.attach_to_ptr(2, &(splPointY[0]));
 	realPointZ.attach_to_ptr(3, &(splPointZ[0]));
+	realPointZ2.attach_to_ptr(2, &(splPointZ[2]));
 	realVelX.attach_to_ptr(2, &(splVelX[0]));
 	realVelY.attach_to_ptr(2, &(splVelY[0]));
 	realVelZ.attach_to_ptr(3, &(splVelZ[0]));
+	realVelZ2.attach_to_ptr(2, &(splVelZ[2]));
 	
 	
  
@@ -207,12 +222,10 @@ bool GantryTrajectory::calcMovement(std::array<uunit, 3> actPos, double radius, 
 
 
 	realT3.attach_to_ptr(2, &(time[3]));
-	realPointZ.attach_to_ptr(2, &(splPointZ[2]));
-	realVelZ.attach_to_ptr(2, &(splVelZ[2]));
 
 	alglib::spline1dbuildhermite(realT3, realPointX, realVelX, hermiteX);
 	alglib::spline1dbuildhermite(realT3, realPointY, realVelY, hermiteY);
-	alglib::spline1dbuildhermite(realT2, realPointZ, realVelZ, hermiteZ);
+	alglib::spline1dbuildhermite(realT3, realPointZ2, realVelZ2, hermiteZ);
 
 	for (int t = 150; t < 200; t++)
 	{
@@ -222,7 +235,19 @@ bool GantryTrajectory::calcMovement(std::array<uunit, 3> actPos, double radius, 
 		trjTime[t] = stepTime * 1000;
 	}
 	trjTime[NUMBER_POS_CALC - 1] = 0;
-
-	return false;
+	
+	//Check safe calc
+	for (int t = 0; t < NUMBER_POS_CALC; t++)
+	{
+		if ((posLimit[0].neg > xPos[t]) || (xPos[t] > posLimit[0].pos)) {
+			throw std::out_of_range("Trajectroy out of software position limit");
+		}
+		if ((posLimit[0].neg > yPos[t]) || (yPos[t] > posLimit[0].pos)) {
+			throw std::out_of_range("Trajectroy out of software position limit");
+		}
+		if ((posLimit[0].neg > zPos[t]) || (zPos[t] > posLimit[0].pos)) {
+			throw std::out_of_range("Trajectroy out of software position limit");
+		}
+	}
 }
 

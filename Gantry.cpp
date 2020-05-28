@@ -3,27 +3,33 @@
 #include <thread>
 #include <direct.h>
 #include <fstream>
+#include <QtCore/qdebug.h>
+#include <regex> 
+#include <string> 
+#include <stdexcept>
 
 
 CML_NAMESPACE_USE();
-
 //3D fix position initialization
 const std::array<uunit, 3> Gantry::LURK_POS = { 138000, 0, 10000 };
 const std::array<uunit, 3> Gantry::HOME_POS = { 0,0,0 };
 const std::array<uunit, 3> Gantry::DROP_POS = { 19800, 22800, 10000 };
-const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 95600, 46000, 20000 };
-const std::array<uunit, 3> Gantry::DISC_DROP = { 49000, 46350, 25500 };
+const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 95600, 48000, 20000 };
+const std::array<uunit, 3> Gantry::DISC_DROP = { 49000, 48000, 25500 };
 const std::array<uunit, 3> Gantry::STORAGE_BASE = { 17400, 0, 0 };
-const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 37000, 17000, 25000 };
-const std::array<uunit, 3> Gantry::WAIT_PAT_BUFFER = { 57000, 2000, 25000 };
+const std::array<uunit, 3> Gantry::STORAGE_SAFE_POS = { 26000, 71000, 0 };
+const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 34000, 14000, 26000 };
+const std::array<uunit, 3> Gantry::WAIT_PAT_BUFFER = { 57000, 2000, 26000 };
 //2D fix position initialization
 //@inner radius, @outer radius
-const std::array<uunit, 2> Gantry::DISC_RADIUS = { 8000, 46350 };
+const std::array<uunit, 2> Gantry::DISC_RADIUS = { 8000, 48000 };
 //1D fix position initialization
 const uunit Gantry::CATCH_Z_HEIGHT = 26100;
-const std::map<Colors, uunit> Gantry::Y_STORAGE = { {GREEN, 89280}, {RED, 81790}, {DARK_BLUE,74150}, {YELLOW, 66260},{BROWN, 58770},{LIGHT_BLUE, 51280} };
+const std::map<Colors, uunit> Gantry::Y_STORAGE = { {GREEN, 90400}, {RED, 83000}, {DARK_BLUE,75400}, {YELLOW, 67500},{BROWN, 60000},{LIGHT_BLUE, 52500} };
 //Half of Camera resolution
 double const Gantry::PIXEL_RADIUS = 540.0;
+//Home order
+const std::array<unsigned short, 3> Gantry::HOME_ORDER = { 2,1,0 };
 
 //static void showerr(const Error* err, const char* msg) {
 //	if (!err) return;
@@ -40,93 +46,179 @@ Gantry::Gantry() {
 
 Gantry::~Gantry()
 {
-	const Error* err;
-	err = ptpMove(HOME_POS);
+	const Error* err = NULL;
+	this->homeAxis(30000, HOME_ORDER);
 	for (int i = 0; i < NUM_AMP; i++)
 	{
 		this->link[i].Disable(true);
 	}
 }
 
-void Gantry::showerr(const Error* err, const char* msg)
+bool Gantry::handleErr(const Error* err)
 {
-	if (!err) return;
-	printf("Error: %s - %s\n", msg, err->toString());
-	system("pause");
+	if (err) {
+		globalErr = err;
+		qDebug() << err->toString();
+		for (int i = 0; i < NUM_AMP; i++)
+		{
+			amp[i].HaltMove();
+			amp[i].Disable();
+		}
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
 
+/**
+Attaches the amplifier files to the gantry object for initialization.
 
+@param attachAmpConfig std array of file paths to CME2 ccx amp config.
+
+*/
+void Gantry::attachAmpConifg(std::array<std::string, NUM_AMP> configPaths)
+{
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
+	}
+	//Eventually modify paramter sothat this makes sense.
+	if (configPaths.size() != NUM_AMP) {
+		throw std::length_error("Number of config files do not fit to number of axis");
+	}
+	std::string CME_NAME = "Amp Name,";
+	for (auto const& path : configPaths) {
+		std::ifstream ampFile(path);
+		std::string line;
+		while (std::getline(ampFile, line)) {
+			std::size_t pos = line.find(CME_NAME);
+			if (pos != std::string::npos) {
+				std::string realAmpName = line.substr(pos + CME_NAME.size(), line.size());
+				short nrSearched = 0;
+				for (auto const& [key, val] : AMP_MAP)
+				{
+					if (key == realAmpName) {
+						this->ampConfigPath[val] = path;
+						break;
+					}
+					else
+					{
+						nrSearched++;
+					}
+				}
+				if (nrSearched >= NUM_AMP)
+				{
+					throw std::invalid_argument("Matching axis names not found in files");
+				}
+			}
+		}
+	}
+}
+
+/**
+Initialization of can and high level can open object.
+
+@returns bool true on sucess.
+*/
 bool Gantry::networkSetup()
 {
-	const Error* err;
+	const Error* err = NULL;
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
+	}
 	err = can.Open();
-	if (err)
+	if (handleErr(err)) {
 		return false;
+	}
 	err = canOpen.Open(can);
-	if (err)
+	if (handleErr(err)) {
 		return false;
+	}
 	return true;
-}
-
-bool Gantry::attachAmpConifg(std::array<std::string, NUM_AMP> configPaths)
-{
-	this->ampConfigPath = configPaths;
-	return false;
 }
 
 
 /**
 Initializes the axes of a gantry.
 
-@param ampConfigPath paths to CME2 amplifier config files.
+@param time that should not be exceeded by homing.
 
 @returns CML Error object
 */
-bool Gantry::initGantry()
-{	
-	const Error* err;
+bool Gantry::initGantry(unsigned int maxTimeHoming)
+{
+	const Error* err = NULL;
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
+	}
 	for (short i = 0; i < NUM_AMP; i++)
 	{
 		err = amp[i].Init(canOpen, CAN_AXIS[i]);
-		if (err)
+		if (handleErr(err)) {
 			return false;
-	}
-	if (ampConfigPath.size() != NUM_AMP)
-		return false;
-	for (short i = 0; i < NUM_AMP; i++)
-	{
-		int line;
+		}
+		int line = 0;
 		err = amp[i].LoadFromFile(ampConfigPath[i].c_str(), line);
-		if (err)
+		if (handleErr(err)) {
 			return false;
+		}
+		err = amp[i].SetHaltMode(HALT_QUICKSTOP);
+		if (handleErr(err)) {
+			return false;
+		}
+		err = amp[i].GetProfileConfig(profConf[i]);
+		if (handleErr(err)) {
+			return false;
+		}
+		err = amp[i].GetSoftLimits(posLimit[i]);
+		if (handleErr(err)) {
+			return false;
+		}
 	}
 	err = link.Init(NUM_AMP, amp);
-	if (err)
+	if (handleErr(err)) {
 		return false;
-	err = homeAxis(30000);
-	if (err)
+	}
+	err = homeAxis(maxTimeHoming, HOME_ORDER);
+	if (handleErr(err)) {
 		return false;
+	}
+
 	//Operation that will be performed if window is exceeded
 	linkCfg.haltOnPosWarn = true;
 	linkCfg.haltOnVelWin = true;
 	err = link.Configure(linkCfg);
-	if (err)
+	if (handleErr(err)) {
 		return false;
-	for (short i = 0; i < NUM_AMP; i++)
-	{
-		err = link[i].SetHaltMode(HALT_QUICKSTOP);
-		if (err)
-			return false;
 	}
+
 	//Movement limitations setup
-	ProfileConfig profConf;
-	err = amp[0].GetProfileConfig(profConf);
-	if (err)
+	uunit maxVel = profConf[0].vel;
+	uunit maxAcc = profConf[0].acc;
+	uunit maxDec = profConf[0].dec;
+	uunit maxJrk = profConf[0].jrk;
+	for (auto const& values : profConf) {
+		if (values.vel < maxVel) {
+			maxVel = values.vel;
+		}
+		else if (values.acc < maxAcc)
+		{
+			maxAcc = values.acc;
+		}
+		else if (values.dec < maxDec)
+		{
+			maxDec = values.dec;
+		}
+		else if (values.jrk < maxJrk) {
+			maxJrk = values.jrk;
+		}
+	}
+	err = link.SetMoveLimits(maxVel, maxAcc*0.75, maxDec*0.75, maxJrk);
+	if (handleErr(err)) {
 		return false;
-	err = link.SetMoveLimits(profConf.vel, profConf.acc*0.75, profConf.dec*0.75, profConf.jrk*0.5);
-	if (err)
-		return false;
+	}
+	//Everything is fine
 	return true;
 }
 
@@ -138,19 +230,23 @@ Homes all axes in reverse order to prevent collisions.
 
 @returns CML Error object
 */
-const Error *Gantry::homeAxis(unsigned short maxTime)
+const Error *Gantry::homeAxis(unsigned int maxTime, std::array<unsigned short, NUM_AMP> axisOrder)
 {
-	const Error* err = 0;
-	for (short i = NUM_AMP-1; i >= 0; i--)
-	{
-		err = link[i].GoHome();
-		if (err)
-			return err;
-	
-		err = link[i].WaitMoveDone(maxTime);
-		if (err)
-			return err;
+	const Error* err = NULL;
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
 	}
+	for (auto const& id : axisOrder) {
+		err = amp[id].GoHome();
+		if (err) {
+			return err;
+		}
+		err = amp[id].WaitHomeDone(maxTime);
+		if (err) {
+			return err;
+		}
+	}
+	//Everything is fine
 	return err;
 }
 
@@ -164,38 +260,44 @@ Catches a Candy that is moving on the rotary table
 
 @return true if the candy got chatched and is dropped at targePos
 */
-bool Gantry::catchRotary(double ang, double angVel, double pixelRadius, std::array<uunit, 3> dropPos, unsigned short maxTime, bool debugMotion)
+bool Gantry::catchRotary(double ang, double angVel, float factorRadius, std::array<uunit, 3> dropPos, unsigned short maxTime, bool debugMotion)
 {
-	const Error* err;
+	const Error* err = NULL; 
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
+	}
 	auto start_move = std::chrono::high_resolution_clock::now();
 	//Radius scaling from pixel to uunit
-	double radius = DISC_RADIUS[1] * (pixelRadius / PIXEL_RADIUS);
+	double radius = DISC_RADIUS[1] * factorRadius;
 	if (radius < DISC_RADIUS[0] || radius > DISC_RADIUS[1]){
-		return false;
+		throw std::out_of_range("Radius out of range");
 	}
-	//Activates auto pump at 90% of catch heigh, stay on for 500ms
-	err = amp[TOOL_AXIS].SetOutputConfig(PUMP_OUT_PIN, OUTCFG_POSITION_TRIG_LOW2HIGH, CATCH_Z_HEIGHT*0.9, 500);
-	if (err) {
-		return false;
-	}
+	setPump(true, 1);
 	setValve(false);
+
+	//Trajectory object
+	trj.attachMoveLimits(this->posLimit);
+
 	trj.calcMovement(getPos(), radius, ang, angVel, dropPos, maxTime);
+
 	auto stop_clac = std::chrono::high_resolution_clock::now();
 	err = link.SendTrajectory(trj, false);
-	if (err) {
+	if (handleErr(err)) {
 		return false;
 	}
 	if (debugMotion) {
-		trj.saveTrj();
+		trj.saveTrj(radius, ang, angVel);
 	}
 	err = link.StartMove();
-	if (err) {
+	if (handleErr(err)) {
 		return false;
 	}
 	err = link.WaitMoveDone(2*maxTime);
-	if (err) {
+	if (handleErr(err)) {
 		return false;
 	}
+	setPump(false);
+
 	auto stop_move = std::chrono::high_resolution_clock::now();
 	auto duration_calc = std::chrono::duration_cast<std::chrono::milliseconds>(stop_clac - start_move);
 	auto duration_move = std::chrono::duration_cast<std::chrono::milliseconds>(stop_move - stop_clac);
@@ -205,9 +307,12 @@ bool Gantry::catchRotary(double ang, double angVel, double pixelRadius, std::arr
 		message.push_back("Movement lasts " + std::to_string(duration_move.count()) + " miliseconds");
 		gantryLog(message);
 	}
+
 	if (getCatched())
 	{
 		setValve(true);
+		dropPos[2] -= 5000;
+		ptpMove(dropPos);
 		return true;
 	}
 	else
@@ -219,10 +324,10 @@ bool Gantry::catchRotary(double ang, double angVel, double pixelRadius, std::arr
 
 bool Gantry::prepareCatch()
 {
-	const Error* err;
-	this->link.ClearLatchedError();
-	err = ptpMove(LURK_POS);
-	if (err) {
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
+	}
+	if (!ptpMove(LURK_POS)) {
 		return false;
 	}
 	return true;
@@ -236,42 +341,29 @@ bool Gantry::prepareCatch()
 */
 bool Gantry::catchStatic(std::array<uunit, NUM_AMP> candyPos, std::array<uunit, NUM_AMP> targetPos)
 {
-	const Error* err;
+	const Error* err = NULL;
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
+	}
 	candyPos[TOOL_AXIS] -= 2500;
-	err = ptpMove(candyPos);
-	if (err){
+	if(!ptpMove(candyPos)) {
 		return false;
 	}
-	err = setValve(false);
-	if (err) {
-		return false;
-	}
-	err = setPump(true);
-	if (err) {
-		return false;
-	}
+	setValve(false);
+	setPump(true);
 	candyPos[TOOL_AXIS] += 2500;
-	err = ptpMove(candyPos);
-	if (err) {
+	if (!ptpMove(candyPos)) {
 		return false;
 	}
 	candyPos[TOOL_AXIS] -= 2500;
-	err = ptpMove(candyPos);
-	if (err) {
+	if (!ptpMove(candyPos)) {
 		return false;
 	}
-	err = setPump(false);
-	if (err) {
+	setPump(false);
+	if (!ptpMove(targetPos)) {
 		return false;
 	}
-	err = ptpMove(targetPos);
-	if (err) {
-		return false;
-	}
-	err = setValve(true);
-	if (err) {
-		return false;
-	}
+	setValve(true);
 	return true;
 }
 
@@ -282,23 +374,26 @@ bool Gantry::catchStatic(std::array<uunit, NUM_AMP> candyPos, std::array<uunit, 
 @param targetPos Position object that where the gantry should move to.
 @param maxTime The maxTime that should not be exceeded.
 */
-const Error *Gantry::ptpMove(std::array<uunit, NUM_AMP> targetPos, unsigned short maxTime)
+bool Gantry::ptpMove(std::array<uunit, NUM_AMP> targetPos, unsigned short maxTime)
 {
-	const Error* err;
+	const Error* err = NULL;
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
+	}
 	Point<targetPos.size()> ampTarget;
 	for (size_t i = 0; i < targetPos.size(); i++)
 	{
 		ampTarget[i] = targetPos[i];
 	}
 	err = link.MoveTo(ampTarget);
-	if (err) {
-		return err;
+	if (handleErr(err)) {
+		return false;
 	}
 	err = link.WaitMoveDone(maxTime);
-	if (err) {
-		return err;
+	if (handleErr(err)) {
+		return false;
 	}
-	return err;
+	return true;
 }
 
 std::array<uunit, Gantry::NUM_AMP> Gantry::getPos()
@@ -313,11 +408,16 @@ std::array<uunit, Gantry::NUM_AMP> Gantry::getPos()
 
 bool Gantry::fillTable(Colors color)
 {
-	const Error* err;
+	const Error* err = NULL;
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
+	}
+	if (!ptpMove(STORAGE_SAFE_POS)) {
+		return false;
+	}
 	std::array<uunit, 3> targetPos = STORAGE_BASE;
 	targetPos[1] = Gantry::Y_STORAGE.at(color);
-	err = ptpMove(targetPos);
-	if (err) {
+	if (!ptpMove(targetPos)) {
 		return false;
 	}
 	ProfileConfigTrap carefulCatch;
@@ -336,38 +436,103 @@ bool Gantry::fillTable(Colors color)
 		link[TOOL_AXIS].SetPositionWarnWindow(4096);
 		setValve(false);
 		setPump(true);
-		err = ptpMove(targetPos);
-		showerr(err, "firstpos");
+		if (!ptpMove(targetPos)) {
+			return false;
+		}
 		setPump(false);
-		targetPos[0] = targetPos[0] + 10000;
-		err = ptpMove(targetPos);
-		showerr(err, "secondpos");
-		err = ptpMove(DISC_DROP);
-		showerr(err, "thirpos");
+		targetPos[0] = targetPos[0] + 15000;
+		if (!ptpMove(targetPos)) {
+			return false;
+		}
+		if (!ptpMove(DISC_DROP)) {
+			return false;
+		}
 		double xRandom = ((double)std::rand() / (RAND_MAX));
 		carefulCatch.vel = 50000;
 		carefulCatch.pos = DISC_CENTER_POS[0] - DISC_RADIUS[1] / 2.0;
-		link[0].SetupMove(carefulCatch);
-		link[0].StartMove();
+		err = link[0].SetupMove(carefulCatch);
+		if (handleErr(err)) {
+			return false;
+		}
+		err = link[0].StartMove();
+		if (handleErr(err)) {
+			return false;
+		}
 		err = link.WaitMoveDone(10000);
-		this->setValve(true);
-		err = ptpMove(LURK_POS);
-
+		if (handleErr(err)) {
+			return false;
+		}
+		setValve(true);
+		if (!ptpMove(LURK_POS)) {
+			return false;
+		}
 		return true;
 	}
 	else {
-		err = this->link.WaitMoveDone(10000);
-		this->link[2].SetPositionWarnWindow(4096);
-		showerr(err, "Waiting for move to finish");
-		std::cout << "empty" << std::endl;
-		err = ptpMove(targetPos);
+		err = link.WaitMoveDone(10000);
+		if (handleErr(err)) {
+			return false;
+		}
+		link[2].SetPositionWarnWindow(4096);
+		if (handleErr(err)) {
+			return false;
+		}
+		ptpMove(targetPos);
 		return false;
 	}	
 }
 
-bool Gantry::handleError(const Error* err)
+bool Gantry::placeOnTable(std::array<uunit, NUM_AMP> candyPos)
 {
-	return false;
+	const Error* err = NULL;
+	if (globalErr) {
+		throw std::runtime_error("Can not proceed with untreated error");
+	}
+
+	candyPos[TOOL_AXIS] -= 8000;
+	if (!ptpMove(candyPos)) {
+		return false;
+	}
+	setValve(false);
+	setPump(true);
+	candyPos[TOOL_AXIS] += 8000;
+	if (!ptpMove(candyPos)) {
+		return false;
+	}
+	candyPos[TOOL_AXIS] -= 8000;
+	if (!ptpMove(candyPos)) {
+		return false;
+	}
+	setPump(false);
+	if (!ptpMove(DISC_DROP)) {
+		return false;
+	}
+
+	ProfileConfigTrap carefulCatch;
+	carefulCatch.acc = 50000;
+	carefulCatch.dec = 50000;
+	carefulCatch.vel = 10000;
+	carefulCatch.pos = DISC_CENTER_POS[0] - DISC_RADIUS[1] / 2.0;
+	err = link[0].SetupMove(carefulCatch);
+	if (handleErr(err)) {
+		return false;
+	}
+	err = link[0].StartMove();
+	if (handleErr(err)) {
+		return false;
+	}
+	err = link.WaitMoveDone(10000);
+	if (handleErr(err)) {
+		return false;
+	}
+	setValve(true);
+	candyPos = DISC_DROP;
+	candyPos[0] = carefulCatch.pos;
+	candyPos[2] -= 5000;
+	if (!ptpMove(candyPos)) {
+		return false;
+	}
+	return true;
 }
 
 
@@ -377,14 +542,30 @@ Set the pump to specific state on/off
 
 @return CML Error object
 */
-const Error *Gantry::setPump(bool state)
-{
-	const Error* err;
-	if (state)
-		err = amp[TOOL_AXIS].SetOutputConfig(PUMP_OUT_PIN, OUTCFG_MANUAL_H);
-	else
+bool Gantry::setPump(bool state, short mode) {
+	const Error* err = NULL;
+	if (!state) {
 		err = amp[TOOL_AXIS].SetOutputConfig(PUMP_OUT_PIN, OUTCFG_MANUAL_L);
-	return err;
+		if (handleErr(err)) {
+			return false;
+		}
+	}
+	else {
+		if (mode == 0) {
+			err = amp[TOOL_AXIS].SetOutputConfig(PUMP_OUT_PIN, OUTCFG_MANUAL_H);
+			if (handleErr(err)) {
+				return false;
+			}
+		}
+		else if (mode == 1) {
+			//Activates auto pump at 90% of catch heigh, stay on for 500ms
+			err = amp[2].SetOutputConfig(PUMP_OUT_PIN, OUTCFG_POSITION_TRIG_LOW2HIGH, CATCH_Z_HEIGHT * 0.9, 500);
+			if (handleErr(err)) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 
@@ -395,7 +576,7 @@ Set the valve to specific state on/off
 */
 const Error* Gantry::setValve(bool state)
 {
-	const Error* err;
+	const Error* err = NULL;
 	if (state)
 		err = amp[TOOL_AXIS].SetOutputConfig(VALVE_OUT_PIN, OUTCFG_MANUAL_H);
 	else
@@ -411,11 +592,14 @@ Check if the tool axis caught something.
 */
 bool Gantry::getCatched()
 {
-	const Error* err;
+	const Error* err = NULL;
 	uint16 currentInput;
 	err = amp[TOOL_AXIS].GetInputs(currentInput);
+	if (handleErr(err)) {
+		return false;
+	}
 	currentInput = currentInput & PRESSURE_IN_PIN;
-	if (currentInput && !err)
+	if (currentInput)
 		return true;
 	else
 		return false;

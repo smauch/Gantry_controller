@@ -25,6 +25,9 @@ private:
 	double radius = 0;
 	double linVel = 0;
 	double linAcc = 0;
+
+	std::array<SoftPosLimit, 3> posLimit;
+
 public:
 	//Constructor
 	GantryTrajectory();
@@ -34,8 +37,9 @@ public:
 	virtual int GetDim(void);
 	virtual bool UseVelocityInfo(void);
 	virtual const Error* NextSegment(uunit pos[], uunit vel[], uint8& time);
-	bool calcMovement(std::array<uunit, 3> actPos, double radius, double angular, double angularVelTarget,std::array<uunit, 3> targetPos, unsigned short maxTime);
+	void calcMovement(std::array<uunit, 3> actPos, double radius, double angular, double angularVelTarget,std::array<uunit, 3> targetPos, unsigned short maxTime);
 	void circle(double radius, double angular, double angularVel);
-	bool saveTrj();
+	bool saveTrj(double radius, double angular, double angularVelTarget);
+	void attachMoveLimits(std::array<SoftPosLimit, 3> posLimit);
 };
 #endif
