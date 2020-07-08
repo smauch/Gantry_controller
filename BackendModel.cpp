@@ -4,8 +4,9 @@ BackendModel::BackendModel()
 {
 }
 
-BackendModel::BackendModel(Status curr_status, utility::string_t error_str)
+BackendModel::BackendModel(Status curr_status, utility::string_t error_str, std::set<Colors> available_candies)
 {
+	this->available_candies = available_candies;
 	this->curr_status = curr_status;
 	this->error_str = error_str;
 }
@@ -19,14 +20,14 @@ value BackendModel::getCurrentStatusJSON()
 	body_obj[U("uptime")] = value(this->uptime);
 	body_obj[U("processedCandies")] = value(this->processed_candies);
 	
-	Colors available_candies[7];
+	json::value available_candies = json::value::array();
 	short i = 0;
 	for (auto elem : this->available_candies)
 	{
 		available_candies[i] = elem;
 		i++;
 	}
-	body_obj[U("candies")] = value(available_candies);
+	body_obj[U("availableCandies")] = value(available_candies);
 	return body_obj;
 }
 

@@ -30,12 +30,21 @@ public:
 protected:
 
 private:
-    BackendModel backend_model = BackendModel(IDLE, U(""));
+    std::set<Colors> test = { GREEN, LIGHT_BLUE };
+    BackendModel backend_model = BackendModel(IDLE, U(""), test);
     void handle_post(http_request message);
     void handle_options(http_request message);
     void handle_error(pplx::task<void>& t);
     http_listener m_listener;
-   
+
+    const string_t REQ_STATE_EP = U("/gantry/reqState");
+    const string_t GET_STATUS_EP = U("/gantry/getStatus");
+    const string_t GET_CANDY_EP = U("/candy/getCandy");
+
+    http_response req_state_endpoint(json::value body, http_response response);
+    http_response get_status_endpoint(json::value body, http_response response);
+    http_response get_candy_endpoint(json::value body, http_response response);
+
 };
 
 #endif // BACKENDSERVER_H

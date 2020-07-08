@@ -13,9 +13,11 @@ class BackendModel
 {
 public:
     BackendModel();
-    BackendModel(Status curr_status, utility::string_t error_str);
+    BackendModel(Status curr_status, utility::string_t error_str, std::set<Colors> available_candies);
     value getCurrentStatusJSON();
+
     Status curr_status;
+    Status req_status;
     std::vector<Colors> candies_to_serve;
     std::set<Colors> available_candies;
     utility::string_t error_str;

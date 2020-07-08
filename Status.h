@@ -7,6 +7,7 @@ enum Status {
     WAIT_PAT,
     SERVE,
     MAINTENANCE,
+    SHUTDOWN,
     ERROR
 };
 

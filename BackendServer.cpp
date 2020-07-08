@@ -17,6 +17,7 @@ handler::~handler()
     //dtor
 }
 
+
 void handler::handle_error(pplx::task<void>& t)
 {
     try
@@ -29,6 +30,9 @@ void handler::handle_error(pplx::task<void>& t)
     }
 }
 
+//
+// Options handling for Preflight requests
+//
 void handler::handle_options(http_request message)
 {
     http_response response(status_codes::OK);
@@ -40,150 +44,121 @@ void handler::handle_options(http_request message)
 
 
 //
+// Endpoint functions
+//
+
+http_response handler::req_state_endpoint(json::value body, http_response response)
+{
+    if (body.has_integer_field(U("state"))) {
+        int req_state = body.at(U("state")).as_integer();
+        set <Status> allowed_req_states = { SHUTDOWN,MAINTENANCE,WAIT_PAT };
+        //Is current State == Req State?
+        //TODO - Test Cast, what happens if number is larger than Enum
+        const bool is_allowed = allowed_req_states.find(Status(req_state)) != allowed_req_states.end();
+        if (is_allowed) {
+            this->backend_model.req_status = Status(req_state);
+            response.set_status_code(status_codes::OK);
+        }
+        else {
+            response.set_status_code(status_codes::Forbidden);
+        }
+    }
+    else {
+        response.set_status_code(status_codes::BadRequest);
+    }
+    return response;
+}
+
+http_response handler::get_status_endpoint(json::value body, http_response response)
+{
+    response.set_status_code(status_codes::OK);
+    response.set_body(backend_model.getCurrentStatusJSON());
+   
+    return response;
+}
+
+http_response handler::get_candy_endpoint(json::value body, http_response response)
+{
+    //What happens for unavailable or wrong ID
+    if (body.has_array_field(U("id"))) {
+        json::array candy_ids = body.at(U("id")).as_array();
+        for (auto const& id : candy_ids) {
+            if (id.is_integer()) {
+                int color_id = id.as_integer();
+                const bool is_available = this->backend_model.available_candies.find(Colors(color_id)) != this->backend_model.available_candies.end();
+                if (is_available) {
+                    this->backend_model.candies_to_serve.push_back(Colors(color_id));
+                }
+                else {
+                    //Response Unavailables
+                }
+            }
+        }
+    }
+    else if (body.has_integer_field(U("id"))) {
+        int color_id = body.at(U("id")).as_integer();
+        const bool is_available = this->backend_model.available_candies.find(Colors(color_id)) != this->backend_model.available_candies.end();
+        if (is_available) {
+            this->backend_model.candies_to_serve.push_back(Colors(color_id));
+        }
+        else {
+            response.set_status_code(status_codes::NotFound);
+            return response;
+        }
+    }
+    else {
+        response.set_status_code(status_codes::BadRequest);
+        return response;
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    //Su´ccesful?
+    // Main controller -> when in idle and candies_to_serve not empty
+    if (true) {
+        response.set_status_code(status_codes::OK);
+    }
+    else
+    {
+        response.set_status_code(status_codes::NotFound);
+    }
+    return response;
+}
+
+
+//
 // A POST request
 //
 void handler::handle_post(http_request message)
-
 {
-    ucout << message.headers().content_type() << endl;
-    auto path = http::uri::decode(message.relative_uri().path());
-
-
+    json::value json_content;
+    string_t path = http::uri::decode(message.relative_uri().path());
     try
     {
-        auto json_content = message.extract_json().get();
-        ucout << json_content << endl;
-        std::cout << "Correct Body" << endl;
-        std::cout << message.extract_utf8string().get() << endl;
+         json_content = message.extract_json().get();
     }
     catch (const std::exception&)
     {
-        std::cout << "failed with that body" << endl;
-        std::cout << message.extract_utf8string().get() << endl;
+        return;
     }
-    auto json_content = message.extract_json().get();
-    ucout << json_content << endl;
-   
 
-    std::cout << "got here" << endl;
-    string_t gantry_endpoint = U("/gantry");
-    string_t candy_endpoint = U("/candy");
+    http_response base_response;
+    base_response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
 
-    if (path.find(gantry_endpoint) != std::string::npos) {
-        string_t start_wait_endpoint = U("/startWait");
-        string_t get_status_endpoint = U("/getStatus");
-        string_t shutdown_endpoint = U("/shutdown");
-        string_t maintenance_endpoint = U("/maintenance");
-
-        if (path.find(start_wait_endpoint) != std::string::npos) {
-            //Do Waitpat
-            message.reply(status_codes::OK);
-        }
-        else if (path.find(get_status_endpoint) != std::string::npos) {
-            //Json parse status
-            
-            std::cout << "got request" << endl;
-            json::value rep = json::value::boolean(true);
-            http_response response(status_codes::OK);
-            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-            response.set_body(backend_model.getCurrentStatusJSON());
-            message.reply(response);
-
-        }
-        else if (path.find(shutdown_endpoint) != std::string::npos) {
-            std::cout << "setShutdown!" << '\n';
-            try
-            {
-                bool go_shutdown = json_content.at(U("state")).as_bool();
-                if (go_shutdown) {
-                    //Call Gantry shutdown
-                    std::cout << "Shutting down" << endl;
-                    //get status
-                    json::value rep = json::value::string(U("statusdata"));
-                    message.reply(status_codes::OK);
-                }
-
-            }
-            catch (const std::exception&)
-            {
-                http_response response(status_codes::InternalError);
-                response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-                message.reply(response);
-            }
-        }
-        else if (path.find(maintenance_endpoint) != std::string::npos) {
-            std::cout << "setMaintenance!" << '\n';
-            try
-            {
-                bool go_maintenance = json_content.at(U("state")).as_bool();
-                if (go_maintenance) {
-                    //Call Gantry Maintenance
-                    std::cout << "going into maintenance" << endl;
-                }
-                else {
-                    //Reset go to Do Nothing
-                    std::cout << "Resuming after maintenance" << endl;
-                }
-                //get status
-                json::value rep = json::value::string(U("statusdata"));
-                message.reply(status_codes::OK, rep);
-            }
-            catch (const std::exception&)
-            {
-                http_response response(status_codes::InternalError);
-                response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-                message.reply(response);
-            }
-        }
-        else
-        {
-            http_response response(status_codes::NotFound);
-            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-            message.reply(response);
-        }
-
+    http_response response;
+    if (path.find(REQ_STATE_EP) != std::string::npos) {
+        response = req_state_endpoint(json_content, base_response);
     }
-    else if (path.find(candy_endpoint) != std::string::npos)
+    else if (path.find(GET_STATUS_EP) != std::string::npos) {
+        response = get_status_endpoint(json_content, base_response);
+    }
+    else if (path.find(GET_CANDY_EP) != std::string::npos) {
+        response = get_candy_endpoint(json_content, base_response);
+    }
+    else
     {
-        std::cout << "Candy endpoint" << endl;
-        string_t get_one_endpoint = U("/getOne");
-
-        if (path.find(get_one_endpoint)) {
-            try
-            {
-                int candy_id = json_content.at(U("id")).as_integer();
-                std::cout << "try to get candy" << candy_id << endl;
-
-            }
-            catch (const std::exception&)
-            {
-                http_response response(status_codes::InternalError);
-                response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-                message.reply(response);
-            }
-            //Gantry get x
-            std::this_thread::sleep_for(std::chrono::seconds(3));
-            //Su´ccesful?
-            if (true) {
-                http_response response(status_codes::OK);
-                response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-                message.reply(response);
-            }
-            else
-            {
-                http_response response(status_codes::NotFound);
-                response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
-                message.reply(response);
-            }
-           
-        }
-        std::cout << "candy!" << '\n';
-        message.reply(status_codes::OK);
+        response = base_response;
+        response.set_status_code(status_codes::NotFound);
     }
-    else {
-        message.reply(status_codes::NotFound);
-    }
-
-    return;
+    //Reply with generated response
+    message.reply(response); 
 };
-
