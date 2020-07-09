@@ -1,6 +1,6 @@
 #pragma once
 #include "Status.h"
-#include <vector>
+#include <queue>
 #include <set>
 #include <string>
 #include "Color.h"
@@ -18,7 +18,7 @@ public:
 
     Status curr_status;
     Status req_status;
-    std::vector<Colors> candies_to_serve;
+    std::queue<Colors> candies_to_serve;
     std::set<Colors> available_candies;
     utility::string_t error_str;
     int uptime;

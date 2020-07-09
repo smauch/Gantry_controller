@@ -89,7 +89,7 @@ http_response handler::get_candy_endpoint(json::value body, http_response respon
                 int color_id = id.as_integer();
                 const bool is_available = this->backend_model->available_candies.find(Colors(color_id)) != this->backend_model->available_candies.end();
                 if (is_available) {
-                    this->backend_model->candies_to_serve.push_back(Colors(color_id));
+                    this->backend_model->candies_to_serve.push(Colors(color_id));
                 }
                 else {
                     //Response Unavailables
@@ -101,7 +101,7 @@ http_response handler::get_candy_endpoint(json::value body, http_response respon
         int color_id = body.at(U("id")).as_integer();
         const bool is_available = this->backend_model->available_candies.find(Colors(color_id)) != this->backend_model->available_candies.end();
         if (is_available) {
-            this->backend_model->candies_to_serve.push_back(Colors(color_id));
+            this->backend_model->candies_to_serve.push(Colors(color_id));
         }
         else {
             response.set_status_code(status_codes::NotFound);
@@ -112,16 +112,17 @@ http_response handler::get_candy_endpoint(json::value body, http_response respon
         response.set_status_code(status_codes::BadRequest);
         return response;
     }
-
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-    //Su´ccesful?
-    // Main controller -> when in idle and candies_to_serve not empty
-    if (true) {
+    // TODO: Handle this with wait_until conditional variable and mutex to safe access 
+    std::this_thread::sleep_for(5000ms);
+    if (!backend_model->candies_to_serve.size()) {
         response.set_status_code(status_codes::OK);
+        std::cout << "sucessfull" << std::endl;
     }
     else
     {
+        // TODO: Err should contain if Candy is not found
         response.set_status_code(status_codes::NotFound);
+        std::cout << "timeout" << std::endl;
     }
     return response;
 }

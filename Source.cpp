@@ -51,11 +51,17 @@ int main(int argc, char* argv[])
     address.append(port);
     BackendModel model(IDLE, U(""), std::set<Colors>{RED, GREEN, YELLOW});
     on_initialize(address, &model);
-
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-        std::cout << model.candies_to_serve.size() << endl;
+        
+        if (model.candies_to_serve.size()) {
+            std::cout << "Begin to serve" << endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(6000));
+            model.processed_candies++;
+            std::cout << "Served this" << model.candies_to_serve.front() << endl;
+            model.candies_to_serve.pop();
+            std::cout << model.processed_candies << endl;
+        }
     }
 
     std::cout << "Press ENTER to exit." << std::endl;
