@@ -14,18 +14,18 @@ CML_NAMESPACE_USE();
 const std::array<uunit, 3> Gantry::LURK_POS = { 138000, 0, 10000 };
 const std::array<uunit, 3> Gantry::HOME_POS = { 0,0,0 };
 const std::array<uunit, 3> Gantry::DROP_POS = { 19800, 22800, 10000 };
-const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 95600, 48000, 20000 };
-const std::array<uunit, 3> Gantry::DISC_DROP = { 49000, 48000, 25500 };
-const std::array<uunit, 3> Gantry::STORAGE_BASE = { 17400, 0, 0 };
+const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 97600, 48000, 20000 };
+const std::array<uunit, 3> Gantry::DISC_DROP = { 51000, 48000, 25500 };
+const std::array<uunit, 3> Gantry::STORAGE_BASE = { 18800, 0, 0 };
 const std::array<uunit, 3> Gantry::STORAGE_SAFE_POS = { 26000, 71000, 0 };
-const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 34000, 14000, 26000 };
-const std::array<uunit, 3> Gantry::WAIT_PAT_BUFFER = { 57000, 2000, 26000 };
+const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 34000, 30000, 26500 };
+const std::array<uunit, 3> Gantry::WAIT_PAT_BUFFER = { 57000, 30000, 26500 };
 //2D fix position initialization
 //@inner radius, @outer radius
 const std::array<uunit, 2> Gantry::DISC_RADIUS = { 8000, 48000 };
 //1D fix position initialization
 const uunit Gantry::CATCH_Z_HEIGHT = 26100;
-const std::map<Colors, uunit> Gantry::Y_STORAGE = { {GREEN, 90400}, {RED, 83000}, {DARK_BLUE,75400}, {YELLOW, 67500},{BROWN, 60000},{LIGHT_BLUE, 52500} };
+const std::map<Colors, uunit> Gantry::Y_STORAGE = { {GREEN, 91100}, {RED, 83500}, {DARK_BLUE,75900}, {YELLOW, 68200},{BROWN, 60600},{LIGHT_BLUE, 53000} };
 //Half of Camera resolution
 double const Gantry::PIXEL_RADIUS = 540.0;
 //Home order
