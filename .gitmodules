@@ -1,0 +1,12 @@
+[submodule "backend-web-server"]
+	path = backend-web-server
+	url = https://gitlab.com/linkit-tech/projects/smart_robotics/backend-web-server.git
+[submodule "gantry"]
+	path = gantry
+	url = https://gitlab.com/linkit-tech/projects/smart_robotics/gantry.git
+[submodule "rotary"]
+	path = rotary
+	url = https://gitlab.com/linkit-tech/projects/smart_robotics/rotary.git
+[submodule "cv"]
+	path = cv
+	url = https://gitlab.com/linkit-tech/projects/smart_robotics/cv.git

@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Gantry">
+      <UniqueIdentifier>{873e9887-3dd0-4455-874f-b489976c5313}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CV">
+      <UniqueIdentifier>{a0f3359b-a188-43e8-a71c-90739337e9de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rotary">
+      <UniqueIdentifier>{dac497df-2c7f-4923-b4de-0e8c390b1d65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Alglib">
+      <UniqueIdentifier>{4bce0406-d7fc-4e3d-961a-832d2e7e811c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Gantry\CML">
+      <UniqueIdentifier>{c28fdfb3-f0ae-443f-a2d3-936c052f1bb9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Controller.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="backend-web-server\BackendServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="backend-web-server\BackendModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Desktop\Messemodell\gui_controller\gantry\Gantry.cpp">
+      <Filter>Gantry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Desktop\Messemodell\gui_controller\gantry\GantryTrajectory.cpp">
+      <Filter>Gantry</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Linkage.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\LSS.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Network.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Node.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Path.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\PDO.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Reference.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\SDO.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Threads.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\TrjScurve.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Utils.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Amp.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\AmpFile.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\AmpFW.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\AmpParam.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\AmpPDO.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\AmpPVT.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\AmpStruct.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\AmpUnits.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\AmpVersion.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Can.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\CanOpen.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\CML.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\CopleyIO.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\CopleyIOFile.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\CopleyNode.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\ecatdc.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Error.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\EtherCAT.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\EventMap.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\File.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Filter.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Firmware.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\Geometry.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\InputShaper.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\IOmodule.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\can\can_ixxat_v3.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\can\can_copley.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\CML\c\threads\Threads_w32.cpp">
+      <Filter>Gantry\CML</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="backend-web-server\BackendServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="backend-web-server\Status.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="backend-web-server\stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="backend-web-server\BackendModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Desktop\Messemodell\gui_controller\gantry\GantryTrajectory.h">
+      <Filter>Gantry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Desktop\Messemodell\gui_controller\gantry\Gantry.h">
+      <Filter>Gantry</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
