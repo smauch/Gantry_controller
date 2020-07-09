@@ -31,7 +31,6 @@ protected:
 
 private:
     
-    std::set<Colors> test = { GREEN, LIGHT_BLUE };
     BackendModel *backend_model;
     void handle_post(http_request message);
     void handle_options(http_request message);

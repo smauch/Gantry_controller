@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
         
         if (model.candies_to_serve.size()) {
             std::cout << "Begin to serve" << endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(6000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
             model.processed_candies++;
             std::cout << "Served this" << model.candies_to_serve.front() << endl;
             model.candies_to_serve.pop();

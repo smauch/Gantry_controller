@@ -113,7 +113,7 @@ http_response handler::get_candy_endpoint(json::value body, http_response respon
         return response;
     }
     // TODO: Handle this with wait_until conditional variable and mutex to safe access 
-    std::this_thread::sleep_for(5000ms);
+    std::this_thread::sleep_for(6000ms);
     if (!backend_model->candies_to_serve.size()) {
         response.set_status_code(status_codes::OK);
         std::cout << "sucessfull" << std::endl;
