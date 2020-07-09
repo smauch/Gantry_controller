@@ -13,6 +13,7 @@
 #include <math.h>   
 #include "GantryTrajectory.h"
 #include <array>
+#include <vector>
 #include <tuple>
 #include <Color.h>
 #include <map>
