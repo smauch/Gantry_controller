@@ -7,8 +7,9 @@ handler::handler()
 {
     //ctor
 }
-handler::handler(utility::string_t url) :m_listener(url)
+handler::handler(utility::string_t url, BackendModel* model) :m_listener(url)
 {
+    this->backend_model = model;
     m_listener.support(methods::POST, std::bind(&handler::handle_post, this, std::placeholders::_1));
     m_listener.support(methods::OPTIONS, std::bind(&handler::handle_options, this, std::placeholders::_1));
 }
@@ -56,7 +57,8 @@ http_response handler::req_state_endpoint(json::value body, http_response respon
         //TODO - Test Cast, what happens if number is larger than Enum
         const bool is_allowed = allowed_req_states.find(Status(req_state)) != allowed_req_states.end();
         if (is_allowed) {
-            this->backend_model.req_status = Status(req_state);
+            this->backend_model->req_status = Status(req_state);
+            
             response.set_status_code(status_codes::OK);
         }
         else {
@@ -72,7 +74,7 @@ http_response handler::req_state_endpoint(json::value body, http_response respon
 http_response handler::get_status_endpoint(json::value body, http_response response)
 {
     response.set_status_code(status_codes::OK);
-    response.set_body(backend_model.getCurrentStatusJSON());
+    response.set_body(this->backend_model->getCurrentStatusJSON());
    
     return response;
 }
@@ -85,9 +87,9 @@ http_response handler::get_candy_endpoint(json::value body, http_response respon
         for (auto const& id : candy_ids) {
             if (id.is_integer()) {
                 int color_id = id.as_integer();
-                const bool is_available = this->backend_model.available_candies.find(Colors(color_id)) != this->backend_model.available_candies.end();
+                const bool is_available = this->backend_model->available_candies.find(Colors(color_id)) != this->backend_model->available_candies.end();
                 if (is_available) {
-                    this->backend_model.candies_to_serve.push_back(Colors(color_id));
+                    this->backend_model->candies_to_serve.push_back(Colors(color_id));
                 }
                 else {
                     //Response Unavailables
@@ -97,9 +99,9 @@ http_response handler::get_candy_endpoint(json::value body, http_response respon
     }
     else if (body.has_integer_field(U("id"))) {
         int color_id = body.at(U("id")).as_integer();
-        const bool is_available = this->backend_model.available_candies.find(Colors(color_id)) != this->backend_model.available_candies.end();
+        const bool is_available = this->backend_model->available_candies.find(Colors(color_id)) != this->backend_model->available_candies.end();
         if (is_available) {
-            this->backend_model.candies_to_serve.push_back(Colors(color_id));
+            this->backend_model->candies_to_serve.push_back(Colors(color_id));
         }
         else {
             response.set_status_code(status_codes::NotFound);

@@ -1,5 +1,8 @@
 #include "BackendServer.h"
+#include "BackendModel.h"
 //#include "cpprest/uri.h"
+#include <chrono>
+#include <thread>
 #include <iostream>
 
 using namespace std;
@@ -11,15 +14,14 @@ using namespace http::experimental::listener;
 
 std::unique_ptr<handler> g_httpHandler;
 
-void on_initialize(const string_t& address)
+void on_initialize(const string_t& address, BackendModel *model)
 {
 
-
     uri_builder uri(address);
-
+   
 
     auto addr = uri.to_uri().to_string();
-    g_httpHandler = std::unique_ptr<handler>(new handler(addr));
+    g_httpHandler = std::unique_ptr<handler>(new handler(addr,model));
     g_httpHandler->open().wait();
 
     ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
@@ -47,8 +49,15 @@ int main(int argc, char* argv[])
 
     utility::string_t address = U("http://127.0.0.1:");
     address.append(port);
+    BackendModel model(IDLE, U(""), std::set<Colors>{RED, GREEN, YELLOW});
+    on_initialize(address, &model);
 
-    on_initialize(address);
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+        std::cout << model.candies_to_serve.size() << endl;
+    }
+
     std::cout << "Press ENTER to exit." << std::endl;
 
     std::string line;

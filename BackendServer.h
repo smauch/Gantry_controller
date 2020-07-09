@@ -20,7 +20,7 @@ class handler
 {
 public:
     handler();
-    handler(utility::string_t url);
+    handler(utility::string_t url, BackendModel *model);
     virtual ~handler();
 
     pplx::task<void>open() { return m_listener.open(); }
@@ -31,7 +31,7 @@ protected:
 
 private:
     std::set<Colors> test = { GREEN, LIGHT_BLUE };
-    BackendModel backend_model = BackendModel(IDLE, U(""), test);
+    BackendModel *backend_model;
     void handle_post(http_request message);
     void handle_options(http_request message);
     void handle_error(pplx::task<void>& t);
