@@ -9,13 +9,6 @@
 #include "BackendModel.h"
 #include <vector>
 
-using namespace std;
-using namespace web;
-using namespace http;
-using namespace utility;
-using namespace http::experimental::listener;
-
-
 class handler
 {
 public:
@@ -32,19 +25,20 @@ protected:
 private:
     
     BackendModel *backend_model;
-    void handle_post(http_request message);
-    void handle_options(http_request message);
+    void handle_post(web::http::http_request message);
+    void handle_options(web::http::http_request message);
     void handle_error(pplx::task<void>& t);
-    http_listener m_listener;
+    web::http::experimental::listener::http_listener m_listener;
 
-    const string_t REQ_STATE_EP = U("/gantry/reqState");
-    const string_t GET_STATUS_EP = U("/gantry/getStatus");
-    const string_t GET_CANDY_EP = U("/candy/getCandy");
+    const utility::string_t REQ_STATE_EP = U("/gantry/reqState");
+    const utility::string_t GET_STATUS_EP = U("/gantry/getStatus");
+    const utility::string_t GET_CANDY_EP = U("/candy/getCandy");
 
-    http_response req_state_endpoint(json::value body, http_response response);
-    http_response get_status_endpoint(json::value body, http_response response);
-    http_response get_candy_endpoint(json::value body, http_response response);
+    web::http::http_response req_state_endpoint(web::json::value body, web::http::http_response response);
+    web::http::http_response get_status_endpoint(web::json::value body, web::http::http_response response);
+    web::http::http_response get_candy_endpoint(web::json::value body, web::http::http_response response);
 
 };
 
-#endif // BACKENDSERVER_H
+#endif 
+// BACKENDSERVER_H

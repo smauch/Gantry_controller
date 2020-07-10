@@ -1,31 +1,43 @@
-#pragma once
-#include "Status.h"
+// BackendModel.h
+#ifndef BACKENDMODEL_H // include guard
+#define BACKENDMODEL_H
+#include <Status.h>
 #include <queue>
 #include <set>
 #include <string>
-#include "Color.h"
+#include <Color.h>
 #include "cpprest/json.h"
 
-using namespace web;
-using namespace json;
 
 class BackendModel
 {
 public:
     BackendModel();
-    BackendModel(Status curr_status, utility::string_t error_str, std::set<Colors> available_candies);
-    value getCurrentStatusJSON();
+    BackendModel(Status curr_status, std::string error_str);
 
-    Status curr_status;
-    Status req_status;
-    std::queue<Colors> candies_to_serve;
-    std::set<Colors> available_candies;
-    utility::string_t error_str;
-    int uptime;
-    int processed_candies;
-    
+    // Getter
+    web::json::value getCurrentStatusJSON();
+    Status getStatus();
+    std::set<Colors> getAvailableCandies();
+    std::string getErr();
+    bool getReadyChangeState();
+
+    // Setter
+    void setErr(std::string err);
+    void setAvailableCandies(std::set<Colors> availableCandies);
+    void setReqStatus(Status reqStatus);
+    void setReadyChangeState(bool block);
+    // Vars
+    std::queue<Colors> candiesToServe;
+
 
 private:
-
+    bool readyChangeState;
+    Status currStatus;
+    Status reqStatus;
+    std::set<Colors> availableCandies;
+    std::string errorStr;
+    int uptime;
+    int processedCandies;
 };
-
+#endif /* BACKENDMODEL_H */

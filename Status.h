@@ -3,12 +3,13 @@
 
 /** all possible candy colors **/
 enum Status {
+    BOOT,
     IDLE,
     WAIT_PAT,
     SERVE,
     MAINTENANCE,
     SHUTDOWN,
-    ERR
+    ERROR
 };
 
 #endif
