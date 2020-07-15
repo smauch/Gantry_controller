@@ -9,7 +9,7 @@ enum Status {
     SERVE,
     MAINTENANCE,
     SHUTDOWN,
-    ERROR
+    ERR
 };
 
 #endif

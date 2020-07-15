@@ -81,32 +81,42 @@ web::http::http_response handler::get_status_endpoint(web::json::value body, web
 
 web::http::http_response handler::get_candy_endpoint(web::json::value body, web::http::http_response response)
 {
+    std::vector<Colors> reqCandies;
     //What happens for unavailable or wrong ID
     if (body.has_array_field(U("id"))) {
         web::json::array candy_ids = body.at(U("id")).as_array();
         for (auto const& id : candy_ids) {
             if (id.is_integer()) {
                 int color_id = id.as_integer();
-                const bool is_available = this->backend_model->getAvailableCandies().find(Colors(color_id)) != this->backend_model->getAvailableCandies().end();
+                std::set<Colors> availableCandies = this->backend_model->getAvailableCandies();
+                Colors reqColor = Colors(color_id);
+                const bool is_available = availableCandies.find(reqColor) != availableCandies.end();
                 if (is_available) {
-                    this->backend_model->candiesToServe.push(Colors(color_id));
+                    reqCandies.push_back(Colors(color_id));
                 }
                 else {
                     //Response Unavailables
                 }
             }
         }
+        this->backend_model->setCandiesToServe(reqCandies);
+        this->backend_model->setReqStatus(SERVE);
     }
     else if (body.has_integer_field(U("id"))) {
         int color_id = body.at(U("id")).as_integer();
-        const bool is_available = this->backend_model->getAvailableCandies().find(Colors(color_id)) != this->backend_model->getAvailableCandies().end();
+        std::set<Colors> availableCandies = this->backend_model->getAvailableCandies();
+        Colors reqColor = Colors(color_id);
+        const bool is_available = availableCandies.find(reqColor) != availableCandies.end();
+       
         if (is_available) {
-            this->backend_model->candiesToServe.push(Colors(color_id));
+            reqCandies.push_back(Colors(color_id));
         }
         else {
             response.set_status_code(web::http::status_codes::NotFound);
             return response;
         }
+        this->backend_model->setCandiesToServe(reqCandies);
+        this->backend_model->setReqStatus(SERVE);
     }
     else {
         response.set_status_code(web::http::status_codes::BadRequest);
@@ -114,7 +124,7 @@ web::http::http_response handler::get_candy_endpoint(web::json::value body, web:
     }
     // TODO: Handle this with wait_until conditional variable and mutex to safe access 
     std::this_thread::sleep_for(std::chrono::seconds(6));
-    if (!backend_model->candiesToServe.size()) {
+    if (!backend_model->getCandiesToServe().size()) {
         response.set_status_code(web::http::status_codes::OK);
         std::cout << "sucessfull" << std::endl;
     }
