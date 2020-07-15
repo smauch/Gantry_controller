@@ -1,6 +1,6 @@
 
 #include "Tracker.h"
-#include <QtCore/QDebug>
+//#include <QtCore/QDebug>
 
 /**
  * constructor of tracker
@@ -304,7 +304,7 @@ void Tracker::autoConfigure(Colors color) {
             }
             catch (const NoCandyException&)
             {
-                qDebug() << "Found no candy";
+                //qDebug() << "Found no candy";
             }
             
             
@@ -317,10 +317,10 @@ void Tracker::autoConfigure(Colors color) {
 
             cv::cvtColor(roi, roiLab, cv::COLOR_BGR2Lab);
             meanLab = meanLab + cv::mean(roiLab) / 60.0;
-            qDebug() << "Pictures proecessed" << j;
+            //qDebug() << "Pictures proecessed" << j;
         }
 
-        qDebug() << "Final value " << meanLab[0] << meanLab[1] << meanLab[2];
+        //qDebug() << "Final value " << meanLab[0] << meanLab[1] << meanLab[2];
 
         colorTrackers[i].setLightness(meanLab[0]);
         colorTrackers[i].setAComponent(meanLab[1]);
