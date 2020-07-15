@@ -67,12 +67,27 @@ void BackendModel::setAvailableCandies(std::set<Colors> availableCandies)
 
 void BackendModel::setReqStatus(Status reqStatus)
 {
-	this->reqStatus = reqStatus;
+	if (currStatus != SHUTDOWN) {
+		this->reqStatus.push(reqStatus);
+	}
 }
 
-void BackendModel::setReadyChangeState(bool readyChangeState)
+void BackendModel::setJobDone()
 {
-	this->readyChangeState = readyChangeState;
+	if (reqStatus.front() == currStatus) {
+		reqStatus.pop();
+		readyChangeState = true;
+	}
+	else {
+		// Error in state handling
+		//TODO Log?
+	}
+	
+}
+
+void BackendModel::setJobRunning()
+{
+
 }
 
 

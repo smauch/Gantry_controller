@@ -21,20 +21,22 @@ public:
     std::set<Colors> getAvailableCandies();
     std::string getErr();
     bool getReadyChangeState();
+    
 
     // Setter
     void setErr(std::string err);
     void setAvailableCandies(std::set<Colors> availableCandies);
     void setReqStatus(Status reqStatus);
-    void setReadyChangeState(bool block);
-    // Vars
+    void setJobDone();
+    void setJobRunning();
+    // Vars should be accessed with getter setter
     std::queue<Colors> candiesToServe;
-
+    std::vector<std::array<uunit, Gantry::NUM_AMP>> candyBuffer;
 
 private:
     bool readyChangeState;
     Status currStatus;
-    Status reqStatus;
+    std::queue<Status> reqStatus;
     std::set<Colors> availableCandies;
     std::string errorStr;
     int uptime;
