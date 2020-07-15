@@ -2,7 +2,9 @@
 #include "BackendModel.h"
 #include "State.h"
 #include "ServeState.h"
+#include "ShutdownState.h"
 #include "WaitState.h"
+#include "MaintState.h"
 //#include "cpprest/uri.h"
 #include <chrono>
 #include <thread>
@@ -52,32 +54,20 @@ int main(int argc, char* argv[])
 
     utility::string_t address = U("http://127.0.0.1:");
     address.append(port);
-    BackendModel model(IDLE, "");
+    BackendModel model(BOOT, "");
     on_initialize(address, &model);
     
+    ShutdownState shutdown(&model, SHUTDOWN);
+    MaintState maitenance(&model, MAINTENANCE);
     ServeState serving(&model, SERVE);
     WaitState waiting(&model, WAIT_PAT);
 
     model.setAvailableCandies(std::set<Colors>{RED, GREEN, YELLOW});
-    model.setReadyChangeState(true);
 
-    while (true)
+    while (model.getStatus() != SHUTDOWN)
     {
-        
-  /*      if (model.candies_to_serve.size()) {
-            std::cout << "Begin to serve" << endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-            model.processed_candies++;
-            std::cout << "Served this" << model.candies_to_serve.front() << endl;
-            model.candies_to_serve.pop();
-            std::cout << model.processed_candies << endl;
-        }*/
+        std::this_thread::sleep_for(std::chrono::seconds(5));
     }
-
-    std::cout << "Press ENTER to exit." << std::endl;
-
-    std::string line;
-    std::getline(std::cin, line);
 
     on_shutdown();
     return 0;

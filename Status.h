@@ -5,7 +5,7 @@
 enum Status {
     BOOT,
     AUTO_CONF,
-    IDLE,
+    RESET,
     WAIT_PAT,
     SERVE,
     MAINTENANCE,

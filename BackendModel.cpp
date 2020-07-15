@@ -1,5 +1,5 @@
 #include <BackendModel.h>
-#include <Observer.h>
+#include <State.h>
 
 BackendModel::BackendModel()
 {
@@ -10,10 +10,10 @@ BackendModel::BackendModel(Status curr_status, std::string error_str)
 {
 	this->currStatus = curr_status;
 	this->errorStr = error_str;
-	readyChangeState = false;
+	readyChangeState = true;
 }
 
-void BackendModel::attach(Observer* obs)
+void BackendModel::attach(State* obs)
 {
 	views.push_back(obs);
 }
@@ -67,7 +67,7 @@ bool BackendModel::getReadyChangeState()
 	return this->readyChangeState;
 }
 
-Status BackendModel::getReqStatus()
+std::queue<Status> BackendModel::getReqStatus()
 {
 	return this->reqStatus;
 }
@@ -91,20 +91,11 @@ void BackendModel::setAvailableCandies(std::set<Colors> availableCandies)
 
 void BackendModel::setReqStatus(Status reqStatus)
 {
-	if (currStatus != SHUTDOWN) {
-		this->reqStatus = reqStatus;
+	for (auto const& view : views) {
+		if (reqStatus == view->getStatus()){
+			this->reqStatus.push(reqStatus);
+		}
 	}
-	this->notify();
-}
-
-void BackendModel::setCurrentStatus(Status currStatus)
-{
-	this->currStatus = currStatus;
-}
-
-void BackendModel::setReadyChangeState(bool readyChangeState)
-{
-	this->readyChangeState = readyChangeState;
 	this->notify();
 }
 
@@ -121,6 +112,30 @@ void BackendModel::setCandyServeDone()
 	if (this->candiesToServe.size()) {
 		this->candiesToServe.pop();
 	}	
+}
+
+void BackendModel::setJobDone()
+{
+	if (currStatus == reqStatus.front()) {
+		reqStatus.pop();
+		readyChangeState = true;
+		this->notify();
+	}
+	else {
+		std::cout << "Current Status have to be the last requested Job" << std::endl;
+	}
+}
+
+void BackendModel::setJobRunning(Status status)
+{
+	if (status == reqStatus.front()) {
+		readyChangeState = false;
+		currStatus = reqStatus.front();
+		this->notify();
+	}
+	else {
+		std::cout << "Requested Status is not the new running Job" << std::endl;
+	}
 }
 
 

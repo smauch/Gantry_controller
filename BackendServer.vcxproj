@@ -144,6 +144,7 @@
     <ClCompile Include="BackendServer.cpp" />
     <ClCompile Include="MaintState.cpp" />
     <ClCompile Include="ServeState.cpp" />
+    <ClCompile Include="ShutdownState.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="WaitState.cpp" />
@@ -152,25 +153,14 @@
     <ClInclude Include="BackendModel.h" />
     <ClInclude Include="BackendServer.h" />
     <ClInclude Include="MaintState.h" />
-    <ClInclude Include="Observer.h" />
     <ClInclude Include="ServeState.h" />
+    <ClInclude Include="ShutdownState.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="Status.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="WaitState.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.1.0.0\build\native\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.targets" Condition="Exists('packages\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.1.0.0\build\native\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.targets')" />
   </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('packages\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.1.0.0\build\native\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.1.0.0\build\native\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.props'))" />
-    <Error Condition="!Exists('packages\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.1.0.0\build\native\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.1.0.0\build\native\vcpkg.C.Users.dunkerLinear.Documents.dev.vcpkg.targets'))" />
-  </Target>
 </Project>

@@ -36,6 +36,9 @@
     <ClCompile Include="MaintState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShutdownState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackendServer.h">
@@ -50,9 +53,6 @@
     <ClInclude Include="Status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Observer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="State.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -65,8 +65,8 @@
     <ClInclude Include="MaintState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClInclude Include="ShutdownState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
