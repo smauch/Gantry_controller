@@ -26,7 +26,7 @@ extern "C"
 
 #include "rotarytable.h"
 #include <iostream> 
-#include <QtCore/QDebug>
+//#include <QtCore/QDebug>
 
 
 
@@ -217,12 +217,12 @@ bool RotaryTable::waitTargetReached(int timeout)
 {
 	int statusword = 0;
 	bool trReached = false;
-	qDebug() << "entering while attention";
+	//qDebug() << "entering while attention";
 	while (! trReached) {
 		readSDO(0x6041, 0x0, statusword);
 		trReached = statusword & 0x400;
 	}
-	qDebug() << "leave while attention";
+	//qDebug() << "leave while attention";
 	return true;
 }
 
