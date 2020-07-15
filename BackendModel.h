@@ -39,17 +39,15 @@ public:
     void setCandiesToServe(std::vector<Colors> candies);
     void setCandyServeDone();
     // Vars
-    void setJobDone();
-    void setJobRunning();
     // Vars should be accessed with getter setter
     std::queue<Colors> candiesToServe;
-    std::vector<std::array<uunit, Gantry::NUM_AMP>> candyBuffer;
+    //std::vector<std::array<uunit, Gantry::NUM_AMP>> candyBuffer;
 
 private:
     bool readyChangeState;
 
     Status currStatus;
-    std::queue<Status> reqStatus;
+    Status reqStatus;
     std::set<Colors> availableCandies;
 
     std::queue<Colors> candiesToServe;
