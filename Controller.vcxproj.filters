@@ -28,22 +28,16 @@
     <Filter Include="Gantry\CML">
       <UniqueIdentifier>{c28fdfb3-f0ae-443f-a2d3-936c052f1bb9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="BackendServer">
+      <UniqueIdentifier>{dc4772f3-21dd-43ae-b244-b142651e61cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="States">
+      <UniqueIdentifier>{042223e7-0f37-4ff7-bb59-402bd05f9c37}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Controller.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="backend-web-server\BackendServer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="backend-web-server\BackendModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Desktop\Messemodell\gui_controller\gantry\Gantry.cpp">
-      <Filter>Gantry</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\Desktop\Messemodell\gui_controller\gantry\GantryTrajectory.cpp">
-      <Filter>Gantry</Filter>
     </ClCompile>
     <ClCompile Include="dependencies\CML\c\Linkage.cpp">
       <Filter>Gantry\CML</Filter>
@@ -162,6 +156,96 @@
     <ClCompile Include="dependencies\CML\c\threads\Threads_w32.cpp">
       <Filter>Gantry\CML</Filter>
     </ClCompile>
+    <ClCompile Include="cv\Coordinates.cpp">
+      <Filter>CV</Filter>
+    </ClCompile>
+    <ClCompile Include="cv\json11.cpp">
+      <Filter>CV</Filter>
+    </ClCompile>
+    <ClCompile Include="cv\Tracker.cpp">
+      <Filter>CV</Filter>
+    </ClCompile>
+    <ClCompile Include="cv\Camera.cpp">
+      <Filter>CV</Filter>
+    </ClCompile>
+    <ClCompile Include="cv\Candy.cpp">
+      <Filter>CV</Filter>
+    </ClCompile>
+    <ClCompile Include="cv\ColorTracker.cpp">
+      <Filter>CV</Filter>
+    </ClCompile>
+    <ClCompile Include="rotary\Rotarytable.cpp">
+      <Filter>Rotary</Filter>
+    </ClCompile>
+    <ClCompile Include="cv\imageStuff.cpp">
+      <Filter>CV</Filter>
+    </ClCompile>
+    <ClCompile Include="backend-web-server\BackendServer.cpp">
+      <Filter>BackendServer</Filter>
+    </ClCompile>
+    <ClCompile Include="backend-web-server\BackendModel.cpp">
+      <Filter>BackendServer</Filter>
+    </ClCompile>
+    <ClCompile Include="gantry\Gantry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gantry\GantryTrajectory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\alglibinternal.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\alglibmisc.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\ap.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\dataanalysis.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\diffequations.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\fasttransforms.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\integration.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\interpolation.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\linalg.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\statistics.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\solvers.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\specialfunctions.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="State.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\Alglib\src\optimization.cpp">
+      <Filter>Alglib</Filter>
+    </ClCompile>
+    <ClCompile Include="WaiteState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="ServeState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="AutoconfState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="MaintenanceState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="backend-web-server\BackendServer.h">
@@ -176,11 +260,28 @@
     <ClInclude Include="backend-web-server\BackendModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Desktop\Messemodell\gui_controller\gantry\GantryTrajectory.h">
-      <Filter>Gantry</Filter>
+    <ClInclude Include="State.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Desktop\Messemodell\gui_controller\gantry\Gantry.h">
-      <Filter>Gantry</Filter>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WaiteState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MaintenanceState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ServeState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AutoconfState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Controller.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
