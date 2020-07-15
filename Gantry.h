@@ -51,11 +51,16 @@ public:
 	const static std::array<uunit, NUM_AMP> WAIT_PAT_BUFFER;
 	//2D fix Positions
 	const static std::array<uunit, 2> DISC_RADIUS;
+	const static std::array<uunit, 2> STORAGE_HEIGHT;
 
 	//1D fix Positions
 	const static uunit CATCH_Z_HEIGHT;
 	const static uunit X_STORAGE;
+	const static uunit CANDY_HEIGHT;
 	const static std::map<Colors, uunit> Y_STORAGE;
+
+	// Storage fill state
+	static std::map<Colors, int> fillState;
 
 	//Constructor
 	Gantry();
@@ -80,14 +85,29 @@ public:
 
 	bool placeOnTable(std::array<uunit, NUM_AMP> candyPos);
 
+	bool disable();
+
+	bool getUndervoltage();
+
+	bool updateFillState();
+
+	//Home each axis seperatly due to may occuring under voltage
+	const Error* homeAxis(unsigned int maxTime, std::array<unsigned short, NUM_AMP> axisOrder, bool saftyMove = true);
+
+	
 
 private:
 	//Global Status
+	bool underVoltage = false;
 
 	//Global error object
-	const Error* globalErr = 0;
+	const Error* globalErr = NULL;
 
 	bool handleErr(const Error* err);
+
+	std::string errDescription;
+
+	std::vector <std::string> logMessage;
 
 	//IXXAT USB to CAN adapter
 	IxxatCANV3 can;
@@ -108,8 +128,7 @@ private:
 	const short CAN_AXIS[NUM_AMP] = { 2, 3, 1 };
 	//Paths to the CME2 generated config files
 	std::array<std::string, NUM_AMP> ampConfigPath;
-	//Home each axis seperatly due to may occuring under voltage
-	const Error *homeAxis(unsigned int maxTime, std::array<unsigned short, NUM_AMP> axisOrder);
+
 	//Trajectory planing with given angular velocity and angular of the disc
 	//Method to perform point to point moves with S-Curve profile
 	GantryTrajectory trj;
@@ -120,8 +139,9 @@ private:
 	const Error *setValve(bool state);
 	bool ptpMove(std::array<uunit, NUM_AMP> targetPos, unsigned short maxTime = 5000);
 	bool getCatched();
+	void saftyMove();
 
-	void gantryLog(std::vector <std::string> message);
+	void gantryLog();
 
 };
 #endif
