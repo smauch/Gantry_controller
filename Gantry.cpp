@@ -14,20 +14,22 @@ CML_NAMESPACE_USE();
 const std::array<uunit, 3> Gantry::LURK_POS = { 138000, 0, 10000 };
 const std::array<uunit, 3> Gantry::HOME_POS = { 0,0,0 };
 const std::array<uunit, 3> Gantry::DROP_POS = { 19800, 22800, 10000 };
-const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 97600, 48000, 20000 };
+const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 97400, 47900, 20000 };
 const std::array<uunit, 3> Gantry::DISC_DROP = { 51000, 48000, 25500 };
 const std::array<uunit, 3> Gantry::STORAGE_BASE = { 18800, 0, 0 };
 const std::array<uunit, 3> Gantry::STORAGE_SAFE_POS = { 26000, 71000, 0 };
 const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 34000, 30000, 26500 };
-const std::array<uunit, 3> Gantry::WAIT_PAT_BUFFER = { 57000, 30000, 26500 };
+
+const  std::array<uunit, 3> Gantry::CANDY_SIZE = { 8800, 6720, 1500 };
 //2D fix position initialization
 //@inner radius, @outer radius
 const std::array<uunit, 2> Gantry::DISC_RADIUS = { 8000, 48000 };
 
 //lower pos, @upper pos
-const std::array<uunit, 2> Gantry::STORAGE_HEIGHT = { 2000, 26000 };
+const std::array<uunit, 2> Gantry::STORAGE_HEIGHT = { 3300, 27100 };
 //1D fix position initialization
 const uunit Gantry::CATCH_Z_HEIGHT = 26100;
+
 const std::map<Colors, uunit> Gantry::Y_STORAGE = { {GREEN, 91100}, {RED, 83500}, {DARK_BLUE,75900}, {YELLOW, 68200},{BROWN, 60600},{LIGHT_BLUE, 53000} };
 //Half of Camera resolution
 double const Gantry::PIXEL_RADIUS = 540.0;
@@ -77,7 +79,7 @@ bool Gantry::handleErr(const Error* err)
 		//Amplifier under voltag
 		if (errId == CMLERR_AmpError_UnderVolt) {
 			underVoltage = true;
-			return true;
+			return false;
 		}
 		// The amplifier is disabled
 		else if (errId == CMLERR_AmpError_Disabled) {
@@ -266,6 +268,7 @@ bool Gantry::initGantry(unsigned int maxTimeHoming)
 		return false;
 	}
 	//Everything is fine
+	updateFillState();
 	return true;
 }
 
@@ -282,7 +285,7 @@ const Error *Gantry::homeAxis(unsigned int maxTime, std::array<unsigned short, N
 	const Error* err = NULL;
 
 	if (saftyMove) {
-		this->saftyMove();
+	//	this->saftyMove();
 	}
 
 	for (auto const& id : axisOrder) {
@@ -520,6 +523,10 @@ bool Gantry::fillTable(Colors color)
 		if (!ptpMove(targetPos)) {
 			return false;
 		}
+		//Fill state empty
+		fillState[color] = 0;
+
+		prepareCatch();
 
 		return false;
 	}	
@@ -612,23 +619,24 @@ bool Gantry::updateFillState()
 		carefulCatch.acc = 50000;
 		carefulCatch.dec = 50000;
 		carefulCatch.vel = 10000;
-		carefulCatch.pos = Gantry::CATCH_Z_HEIGHT;
+		carefulCatch.pos = (Gantry::STORAGE_HEIGHT[1] - (Gantry::CANDY_SIZE[2] / 2));
 		link[TOOL_AXIS].SetupMove(carefulCatch);
 		link[TOOL_AXIS].SetPositionWarnWindow(35);
 		EventAny posWarn(AMPEVENT_POSWARN);
 		link[TOOL_AXIS].StartMove();
-		err = link[TOOL_AXIS].WaitEvent(posWarn, 6000);
+		//Be careful with these times, they are linked to the Toolaxis velocity and the Storage height
+		err = link[TOOL_AXIS].WaitEvent(posWarn, 4000);
 		if (!err) {
 		
 			link[TOOL_AXIS].HaltMove();
 
+			link[TOOL_AXIS].SetPositionWarnWindow(4096);
+
 			uunit fillHightPosition;
 			err = link[TOOL_AXIS].GetPositionActual(fillHightPosition);
 
-			int numCandies = int(STORAGE_HEIGHT[1] - fillHightPosition) / int(CANDY_HEIGHT);
+			int numCandies = int(STORAGE_HEIGHT[1] - fillHightPosition) / int(CANDY_SIZE[2]);
 			fillState[it->first] = numCandies;
-
-			link[TOOL_AXIS].SetPositionWarnWindow(4096);
 
 			if (!ptpMove(targetPos)) {
 				return false;
@@ -636,8 +644,8 @@ bool Gantry::updateFillState()
 			
 		}
 		else {
-			//TODO check if this is needed
-			err = link.WaitMoveDone(10000);
+			//Be careful with these times, they are linked to the Toolaxis velocity and the Storage height
+			err = link.WaitMoveDone(5000);
 			if (handleErr(err)) {
 				return false;
 			}
@@ -648,7 +656,8 @@ bool Gantry::updateFillState()
 			if (!ptpMove(targetPos)) {
 				return false;
 			}
-			return false;
+			//Fill state empty
+			fillState[it->first] = 0;
 		}
 
 		targetPos[0] = targetPos[0] + 15000;
@@ -656,7 +665,13 @@ bool Gantry::updateFillState()
 			return false;
 		}
 	}
+	prepareCatch();
 	return true;
+}
+
+int Gantry::getFillState(Colors color)
+{
+	return this->fillState[color];
 }
 
 
@@ -752,7 +767,7 @@ void Gantry::saftyMove()
 	}
 }
 
-void Gantry::gantryLog()
+void Gantry::gantryLog(std::vector<std::string> logMessage)
 {
 	char rootDir[] = ".\\log";
 	if (!std::filesystem::exists(rootDir)) {

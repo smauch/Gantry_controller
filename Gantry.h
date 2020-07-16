@@ -48,7 +48,8 @@ public:
 	const static std::array<uunit, NUM_AMP> STORAGE_BASE;
 	const static std::array<uunit, NUM_AMP> STORAGE_SAFE_POS;
 	const static std::array<uunit, NUM_AMP> WAIT_PAT_BASE;
-	const static std::array<uunit, NUM_AMP> WAIT_PAT_BUFFER;
+
+	const static std::array<uunit, NUM_AMP> CANDY_SIZE;
 	//2D fix Positions
 	const static std::array<uunit, 2> DISC_RADIUS;
 	const static std::array<uunit, 2> STORAGE_HEIGHT;
@@ -56,11 +57,11 @@ public:
 	//1D fix Positions
 	const static uunit CATCH_Z_HEIGHT;
 	const static uunit X_STORAGE;
-	const static uunit CANDY_HEIGHT;
+	
 	const static std::map<Colors, uunit> Y_STORAGE;
 
 	// Storage fill state
-	static std::map<Colors, int> fillState;
+	std::map<Colors, int> fillState;
 
 	//Constructor
 	Gantry();
@@ -91,6 +92,8 @@ public:
 
 	bool updateFillState();
 
+	int getFillState(Colors color);
+
 	//Home each axis seperatly due to may occuring under voltage
 	const Error* homeAxis(unsigned int maxTime, std::array<unsigned short, NUM_AMP> axisOrder, bool saftyMove = true);
 
@@ -108,6 +111,8 @@ private:
 	std::string errDescription;
 
 	std::vector <std::string> logMessage;
+
+	//
 
 	//IXXAT USB to CAN adapter
 	IxxatCANV3 can;
@@ -141,7 +146,7 @@ private:
 	bool getCatched();
 	void saftyMove();
 
-	void gantryLog();
+	void gantryLog(std::vector<std::string> logMessage);
 
 };
 #endif
