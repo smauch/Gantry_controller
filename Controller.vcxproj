@@ -142,7 +142,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AutoconfState.cpp" />
     <ClCompile Include="backend-web-server\BackendModel.cpp" />
     <ClCompile Include="backend-web-server\BackendServer.cpp" />
     <ClCompile Include="Controller.cpp" />
@@ -207,11 +206,12 @@
     <ClCompile Include="dependencies\CML\c\Utils.cpp" />
     <ClCompile Include="gantry\Gantry.cpp" />
     <ClCompile Include="gantry\GantryTrajectory.cpp" />
-    <ClCompile Include="MaintenanceState.cpp" />
     <ClCompile Include="rotary\Rotarytable.cpp" />
-    <ClCompile Include="ServeState.cpp" />
-    <ClCompile Include="State.cpp" />
-    <ClCompile Include="WaiteState.cpp" />
+    <ClCompile Include="states\AutoconfState.cpp" />
+    <ClCompile Include="states\MaintenanceState.cpp" />
+    <ClCompile Include="states\ServeState.cpp" />
+    <ClCompile Include="states\State.cpp" />
+    <ClCompile Include="states\WaiteState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoconfState.h" />
@@ -222,7 +222,7 @@
     <ClInclude Include="MaintenanceState.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ServeState.h" />
-    <ClInclude Include="State.h" />
+    <ClInclude Include="states\State.h" />
     <ClInclude Include="WaiteState.h" />
   </ItemGroup>
   <ItemGroup>

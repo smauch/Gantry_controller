@@ -23,10 +23,10 @@ void AutoconfState::doJob()
 				candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVel / 1000 * 180 / M_PI * elapsed));
 				double ang = candy.getCurrentPosition().getAngle();
 				double radiusFact = candy.getCurrentPosition().getR() / tracker->getOuterR();
-				statusModel->candyBuffer.push_back(Gantry::WAIT_PAT_BASE);
-				statusModel->candyBuffer[i][1] = statusModel->candyBuffer[i][1] + i * 12000;
+				candyBuffer.push_back(Gantry::WAIT_PAT_BASE);
+				candyBuffer[i][1] = candyBuffer[i][1] + i * 12000;
 
-				bool catchSucess = gantry->catchRotary(ang, angVel, radiusFact, statusModel->candyBuffer[i], 8000);
+				bool catchSucess = gantry->catchRotary(ang, angVel, radiusFact, candyBuffer[i], 8000);
 				if (catchSucess) {
 					i++;
 					break;
@@ -43,12 +43,13 @@ void AutoconfState::doJob()
 	}
 
 	//clear afterwards the plate and fill the table
-	int len = statusModel->candyBuffer.size();
+	int len = candyBuffer.size();
 	rotary->startVelMode(400);
 	for (int i = 0; i < len; i++)
 	{
-		gantry->placeOnTable(statusModel->candyBuffer[0]);
-		statusModel->candyBuffer.erase(statusModel->candyBuffer.begin());
+		//TODO make sure is not empty
+		gantry->placeOnTable(candyBuffer[0]);
+		candyBuffer.erase(candyBuffer.begin());
 	}
 	// place one piece of each color on the table
 	gantry->prepareCatch();

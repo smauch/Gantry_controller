@@ -1,11 +1,11 @@
 #include "ServeState.h"
 
+
 void ServeState::doJob()
 { 
 	failedTrys = 0;
-	if (statusModel->candiesToServe.size()) {
-		reqCandy = statusModel->candiesToServe.front();
-
+	if (getModel()->getCandiesToServe().size()) {
+		reqCandy = getModel()->getCandiesToServe().front();
 		while (failedTrys <= 3) {
 			failedTrys++;
 			rotary->startRandMove(800);
@@ -25,7 +25,7 @@ void ServeState::doJob()
 				bool success = gantry->catchRotary(ang, angVelStart, radiusFact, Gantry::DROP_POS);
 				if (success) {
 					// Model sucessfull
-					statusModel->candiesToServe.pop();
+					getModel()->setCandyServeDone();
 					gantry->fillTable(reqCandy);
 					break;
 				}
@@ -36,8 +36,17 @@ void ServeState::doJob()
 			}
 			catch (const NoCandyException&)
 			{
-				gantry->fillTable(reqCandy);
 				failedTrys++;
+				if (gantry->getFillState(reqCandy)) {
+					gantry->fillTable(reqCandy);
+				}
+				else {
+					std::set <Colors> currAvailable = getModel()->getAvailableCandies();
+					currAvailable.erase(reqCandy);
+					getModel()->setAvailableCandies(currAvailable);
+					gantry->prepareCatch();
+					return;
+				}
 			}
 		}
 	}

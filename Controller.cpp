@@ -1,4 +1,5 @@
-
+//States
+#include <State.h>
 // Own Classes 
 #include <Gantry.h>
 #include <Color.h>
@@ -9,11 +10,13 @@
 #include <Candy.h>
 #include <ColorTracker.h>
 #include <Tracker.h>
-#include <State.h>
+#include <WaitPattern.h>
+
+//States
 #include <AutoconfState.h>
 #include <MaintenanceState.h>
 #include <ServeState.h>
-
+#include <WaiteState.h>
 
 #include <stdio.h>
 #include <string>
@@ -30,8 +33,6 @@
 
 
 std::unique_ptr<handler> g_httpHandler;
-
-bool running = true;
 
 
 void serverOnInitialize(const utility::string_t& address, BackendModel* model)
@@ -51,19 +52,13 @@ void serverOnShutdown()
 }
 
 
-
-
 int main(int argc, const char* argv[]) {
 
 	const char CANDIES_CONFIG[] = "./parameters/CADIES_CONFIG.json";
 	const char TRACKER_CONFIG[] = "./parameters/TRACKER_CONFIG.json";
 	const char CASCADE_FILE[] = "./parameters/cascade.xml";
-	BackendModel statusModel(IDLE, "");
-
-	utility::string_t m_port = U("34568");
-	utility::string_t address = U("http://127.0.0.1:");
-	address.append(m_port);
-	serverOnInitialize(address, &statusModel);
+	const char PYLON_CONFIG[] = "./parameters/basler_ace.pfs";
+	const std::array<std::string,3> AMP_CONFIG{"./parameters/X-Axis.ccx", "./parameters/Y-Axis.ccx", "./parameters/Z-Axis.ccx"};
 
 	Camera camera;
 	Pylon::PylonInitialize();
@@ -72,29 +67,63 @@ int main(int argc, const char* argv[]) {
 	Pylon::IPylonDevice* pDevice = NULL;
 	Pylon::CInstantCamera baslerCamera = Pylon::CInstantCamera();
 	std::vector<ColorTracker> colorTrackers;
-	RotaryTable rotary;
+	
 	Tracker tracker;
 	cv::Mat currentImage;
 	Gantry gantry;
+	RotaryTable rotary;
 	Coordinates nextCandy;
 	double myRadius;
 	Candy detectedCandies;
 	Colors requestedColor;
 
 	// States
-	AutoconfState confState;
-	MaintenanceState maintState;
-	ServeState serveState;
+	utility::string_t address = U("http://127.0.0.1:34568");
+	BackendModel model(BOOT, "");
+	serverOnInitialize(address, &model);
+	
 
-	statusModel.setReqStatus(AUTO_CONF);
-	statusModel.setReqStatus(WAIT_PAT);
+	//Initialize 
+	pDevice = tlFactory.CreateFirstDevice();
+	baslerCamera.Attach(pDevice);
+	baslerCamera.Open();
+	Pylon::CFeaturePersistence::Load(PYLON_CONFIG, &(baslerCamera.GetNodeMap()), true);
+	camera = Camera(&baslerCamera);
 
-	while (running) {
+	colorTrackers = {
+			ColorTracker("Green", 99, 149, 115),
+			ColorTracker("Red", 169, 161, 110),
+			ColorTracker("Dark Blue", 132, 117, 76),
+			ColorTracker("Yellow", 133, 181, 166),
+			ColorTracker("Brown", 140, 136, 94),
+			ColorTracker("Light Blue", 154, 81, 81),
+	};
 
+	tracker = Tracker::getTrackerFromJson(TRACKER_CONFIG, camera, colorTrackers, CASCADE_FILE);
+	bool status = gantry.networkSetup();
+	gantry.attachAmpConifg(AMP_CONFIG);
+	status = gantry.initGantry(30000);
+
+	status = rotary.initNetwork();
+	bool worked = rotary.initMotor();
+
+	
+	//ShutdownState shutdown(&model, SHUTDOWN);
+	//MaintState maitenance(&model, MAINTENANCE);
+
+	AutoconfState autoConf(&model, AUTO_CONF, &gantry, &rotary, &tracker);
+	ServeState serving(&model, SERVE, &gantry, &rotary, &tracker);
+	WaitState waiting(&model, WAIT_PAT, &gantry, &rotary, &tracker);
+
+	model.setAvailableCandies(std::set<Colors>{RED, GREEN, YELLOW, BROWN, LIGHT_BLUE, DARK_BLUE});
+	model.setReqStatus(AUTO_CONF);
+
+
+	while (model.getStatus() != SHUTDOWN)
+	{
+		std::this_thread::sleep_for(std::chrono::seconds(5));
 	}
 
-	statusModel.setReqStatus(SHUTDOWN);
-	gantry.disable();
 	serverOnShutdown();
 	return 0;
 }

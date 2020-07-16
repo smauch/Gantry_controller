@@ -1,31 +1,39 @@
 #pragma once
-#include <Gantry.h>
-#include <Rotarytable.h>
-#include <Candy.h>
-#include <Tracker.h>
-#include <Status.h>
 #include <BackendModel.h>
-
-class State
-{
+class State {
 public:
-	State();
-	State(BackendModel *statusModel, Status state, Gantry* gantry, RotaryTable* rotary, Tracker* tracker);
+    State(BackendModel* mod, Status status) {
+        model = mod;
+        model->attach(this);
+        this->status = status;
+    }
 
-	void exectue();
-	bool getIsRunning();
-	
+    void update() {
+        if (!getModel()->getReqStatus().empty()) {
+            if (getModel()->getReadyChangeState() && (getModel()->getReqStatus().front() == this->status)) {
+                this->execute();
+            }
+        }
+    }
+
+    Status getStatus() {
+        return status;
+    }
+
 
 protected:
-	void setJobDone();
-
-	BackendModel *statusModel;
-	Status state;
-	Gantry* gantry;
-	RotaryTable* rotary;
-	Tracker* tracker;
+    BackendModel* getModel() {
+        return model;
+    }
+    virtual void doJob() = 0;
 
 private:
-	bool isRunning = false;
+    BackendModel* model;
+    Status status;
+    virtual void execute() {
+        getModel()->setJobRunning(this->status);
+        std::cout << "New Status" << getModel()->getStatus() << std::endl;;
+        this->doJob();
+        getModel()->setJobDone();
+    }
 };
-

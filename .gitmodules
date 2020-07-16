@@ -10,3 +10,6 @@
 [submodule "cv"]
 	path = cv
 	url = https://gitlab.com/linkit-tech/projects/smart_robotics/cv.git
+[submodule "waitpattern"]
+	path = waitpattern
+	url = https://gitlab.com/linkit-tech/projects/smart_robotics/waitpattern.git

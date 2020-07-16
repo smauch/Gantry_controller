@@ -186,12 +186,6 @@
     <ClCompile Include="backend-web-server\BackendModel.cpp">
       <Filter>BackendServer</Filter>
     </ClCompile>
-    <ClCompile Include="gantry\Gantry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="gantry\GantryTrajectory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="dependencies\Alglib\src\alglibinternal.cpp">
       <Filter>Alglib</Filter>
     </ClCompile>
@@ -228,22 +222,28 @@
     <ClCompile Include="dependencies\Alglib\src\specialfunctions.cpp">
       <Filter>Alglib</Filter>
     </ClCompile>
-    <ClCompile Include="State.cpp">
-      <Filter>Alglib</Filter>
-    </ClCompile>
     <ClCompile Include="dependencies\Alglib\src\optimization.cpp">
       <Filter>Alglib</Filter>
     </ClCompile>
-    <ClCompile Include="WaiteState.cpp">
+    <ClCompile Include="states\WaiteState.cpp">
       <Filter>States</Filter>
     </ClCompile>
-    <ClCompile Include="ServeState.cpp">
+    <ClCompile Include="states\ServeState.cpp">
       <Filter>States</Filter>
     </ClCompile>
-    <ClCompile Include="AutoconfState.cpp">
+    <ClCompile Include="states\AutoconfState.cpp">
       <Filter>States</Filter>
     </ClCompile>
-    <ClCompile Include="MaintenanceState.cpp">
+    <ClCompile Include="states\MaintenanceState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="gantry\Gantry.cpp">
+      <Filter>Gantry</Filter>
+    </ClCompile>
+    <ClCompile Include="gantry\GantryTrajectory.cpp">
+      <Filter>Gantry</Filter>
+    </ClCompile>
+    <ClCompile Include="states\State.cpp">
       <Filter>States</Filter>
     </ClCompile>
   </ItemGroup>
@@ -260,9 +260,6 @@
     <ClInclude Include="backend-web-server\BackendModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="State.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -276,6 +273,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AutoconfState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="states\State.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
