@@ -13,9 +13,9 @@ CML_NAMESPACE_USE();
 //3D fix position initialization
 const std::array<uunit, 3> Gantry::LURK_POS = { 138000, 0, 10000 };
 const std::array<uunit, 3> Gantry::HOME_POS = { 0,0,0 };
-const std::array<uunit, 3> Gantry::DROP_POS = { 19800, 22800, 10000 };
+const std::array<uunit, 3> Gantry::DROP_POS = { 17000, 22800, 2000 };
 const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 97400, 47900, 20000 };
-const std::array<uunit, 3> Gantry::DISC_DROP = { 51000, 48000, 25500 };
+const std::array<uunit, 3> Gantry::DISC_DROP = { 51000, 48000, 25900 };
 const std::array<uunit, 3> Gantry::STORAGE_BASE = { 18800, 0, 0 };
 const std::array<uunit, 3> Gantry::STORAGE_SAFE_POS = { 26000, 71000, 0 };
 const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 34000, 30000, 26500 };
@@ -268,6 +268,7 @@ bool Gantry::initGantry(unsigned int maxTimeHoming)
 		return false;
 	}
 	//Everything is fine
+
 	updateFillState();
 	return true;
 }
@@ -359,7 +360,7 @@ bool Gantry::catchRotary(double ang, double angVel, float factorRadius, std::arr
 
 	if (getCatched())
 	{
-		setValve(true);
+		setValve(true, 200);
 		dropPos[2] -= 5000;
 		ptpMove(dropPos);
 		return true;
@@ -388,25 +389,39 @@ bool Gantry::prepareCatch()
 bool Gantry::catchStatic(std::array<uunit, NUM_AMP> candyPos, std::array<uunit, NUM_AMP> targetPos)
 {
 	const Error* err = NULL;
-	candyPos[TOOL_AXIS] -= 2500;
+	candyPos[TOOL_AXIS] -= 5000;
 	if(!ptpMove(candyPos)) {
 		return false;
 	}
 	setValve(false);
 	setPump(true);
-	candyPos[TOOL_AXIS] += 2500;
+	candyPos[TOOL_AXIS] += 5000;
 	if (!ptpMove(candyPos)) {
 		return false;
 	}
-	candyPos[TOOL_AXIS] -= 2500;
+	candyPos[TOOL_AXIS] -= 5000;
 	if (!ptpMove(candyPos)) {
 		return false;
 	}
 	setPump(false);
+
+	targetPos[TOOL_AXIS] -= 5000;
 	if (!ptpMove(targetPos)) {
 		return false;
 	}
-	setValve(true);
+
+	targetPos[TOOL_AXIS] += 5000;
+	if (!ptpMove(targetPos)) {
+		return false;
+	}
+	setValve(true,50);
+
+
+	targetPos[TOOL_AXIS] -= 5000;
+	if (!ptpMove(targetPos)) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -499,10 +514,18 @@ bool Gantry::fillTable(Colors color)
 		if (handleErr(err)) {
 			return false;
 		}
-		setValve(true);
+		// Wait!
+		setValve(true, 500);
+
 		if (!ptpMove(LURK_POS)) {
 			return false;
 		}
+
+		//Save access
+		if (fillState.find(color) != fillState.end()) {
+			fillState.at(color)--;
+		}
+
 		return true;
 	}
 	else {
@@ -551,6 +574,11 @@ bool Gantry::placeOnTable(std::array<uunit, NUM_AMP> candyPos)
 		return false;
 	}
 	setPump(false);
+
+	if (!getCatched()) {
+		return false;
+	}
+
 	if (!ptpMove(DISC_DROP)) {
 		return false;
 	}
@@ -715,14 +743,17 @@ Set the valve to specific state on/off
 
 @return CML Error object
 */
-const Error* Gantry::setValve(bool state)
+const Error* Gantry::setValve(bool state, int waitMs)
 {
 	const Error* err = NULL;
 	if (state)
 		err = amp[TOOL_AXIS].SetOutputConfig(VALVE_OUT_PIN, OUTCFG_MANUAL_H);
 	else
 		err = amp[TOOL_AXIS].SetOutputConfig(VALVE_OUT_PIN, OUTCFG_MANUAL_L);
+	if(waitMs)
+		std::this_thread::sleep_for(std::chrono::milliseconds(waitMs));
 	return err;
+
 }
 
 
@@ -733,6 +764,7 @@ Check if the tool axis caught something.
 */
 bool Gantry::getCatched()
 {
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	const Error* err = NULL;
 	uint16 currentInput;
 	err = amp[TOOL_AXIS].GetInputs(currentInput);

@@ -141,7 +141,7 @@ private:
 	const static double PIXEL_RADIUS;
 
 	bool setPump(bool state, short mode=0);
-	const Error *setValve(bool state);
+	const Error *setValve(bool state, int waitMs=0);
 	bool ptpMove(std::array<uunit, NUM_AMP> targetPos, unsigned short maxTime = 5000);
 	bool getCatched();
 	void saftyMove();
