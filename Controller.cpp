@@ -91,12 +91,12 @@ int main(int argc, const char* argv[]) {
 	camera = Camera(&baslerCamera);
 
 	colorTrackers = {
-			ColorTracker("Green", 99, 149, 115),
-			ColorTracker("Red", 169, 161, 110),
+			ColorTracker("Green", 101, 148, 116),
+			ColorTracker("Red", 168, 159, 109),
 			ColorTracker("Dark Blue", 132, 117, 76),
 			ColorTracker("Yellow", 133, 181, 166),
 			ColorTracker("Brown", 140, 136, 94),
-			ColorTracker("Light Blue", 154, 81, 81),
+			ColorTracker("Light Blue", 153, 83, 83),
 	};
 
 	tracker = Tracker::getTrackerFromJson(TRACKER_CONFIG, camera, colorTrackers, CASCADE_FILE);
@@ -117,6 +117,7 @@ int main(int argc, const char* argv[]) {
 
 	model.setAvailableCandies(std::set<Colors>{RED, GREEN, YELLOW, BROWN, LIGHT_BLUE, DARK_BLUE});
 	model.setReqStatus(AUTO_CONF);
+	model.setReqStatus(WAIT_PAT);
 
 
 	while (model.getStatus() != SHUTDOWN)

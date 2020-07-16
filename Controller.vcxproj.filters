@@ -34,6 +34,9 @@
     <Filter Include="States">
       <UniqueIdentifier>{042223e7-0f37-4ff7-bb59-402bd05f9c37}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Waitpattern">
+      <UniqueIdentifier>{d5fafda4-aec2-4663-ade2-12c6a5ef178b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Controller.cpp">
@@ -231,9 +234,6 @@
     <ClCompile Include="states\ServeState.cpp">
       <Filter>States</Filter>
     </ClCompile>
-    <ClCompile Include="states\AutoconfState.cpp">
-      <Filter>States</Filter>
-    </ClCompile>
     <ClCompile Include="states\MaintenanceState.cpp">
       <Filter>States</Filter>
     </ClCompile>
@@ -245,6 +245,12 @@
     </ClCompile>
     <ClCompile Include="states\State.cpp">
       <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="states\AutoconfState.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="waitpattern\WaitPattern.cpp">
+      <Filter>Waitpattern</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
