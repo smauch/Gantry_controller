@@ -130,6 +130,8 @@ bool RotaryTable::startVelMode(int velocity, int acceleration, int decceleration
 		return false;
 	}
 	
+
+
 	return true;
 }
 
@@ -235,7 +237,8 @@ bool RotaryTable::writeSDO(WORD index, BYTE subindex, BOOL value)
 	err = COP_WriteSDO(this->m_Board_Hdl, this->m_node_no_slave, this->m_sdo_no, this->m_mode, index, subindex, txlen, (PBYTE)&value, &abortcode);
 	
 	if (err || abortcode) {
-		return true;
+		// TODO Wait short time then set new vel
+		return false;
 	}
 	return true;
 }
