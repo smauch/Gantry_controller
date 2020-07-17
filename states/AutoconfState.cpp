@@ -90,7 +90,8 @@ void AutoconfState::doJob()
 	//	gantry->fillTable(it->first);
 	//}
 	//rotary->stopMovement();
-
+	gantry->prepareCatch();
+	rotary->startRandMove(1000);
 	std::ofstream outfile;
 	outfile.open(CANDIES_CONFIG);
 	// write data into the json file.

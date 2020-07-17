@@ -19,6 +19,8 @@ void ServeState::doJob()
 				auto end = std::chrono::high_resolution_clock::now();
 				auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 				double angVelEnd = rotary->getTableAngVel();
+				double angVelDiff = angVelEnd - angVelStart;
+				std::cout << "AngVel difference: " << angVelDiff;
 				candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVelStart / 1000 * 180 / M_PI * elapsed));
 				double ang = candy.getCurrentPosition().getAngle();
 				float radiusFact = candy.getCurrentPosition().getR() / tracker->getOuterR();

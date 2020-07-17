@@ -17,6 +17,8 @@
 #include <MaintenanceState.h>
 #include <ServeState.h>
 #include <WaiteState.h>
+#include <MaintenanceState.h>
+
 
 #include <stdio.h>
 #include <string>
@@ -78,7 +80,8 @@ int main(int argc, const char* argv[]) {
 	Colors requestedColor;
 
 	// States
-	utility::string_t address = U("http://127.0.0.1:34568");
+	// Static Local IPV4 adress, keep this port
+	utility::string_t address = U("http://192.168.0.110:34568");
 	BackendModel model(BOOT, "");
 	serverOnInitialize(address, &model);
 	
@@ -107,7 +110,6 @@ int main(int argc, const char* argv[]) {
 	status = rotary.initNetwork();
 	bool worked = rotary.initMotor();
 
-	
 	//ShutdownState shutdown(&model, SHUTDOWN);
 	//MaintState maitenance(&model, MAINTENANCE);
 
@@ -116,8 +118,15 @@ int main(int argc, const char* argv[]) {
 	WaitState waiting(&model, WAIT_PAT, &gantry, &rotary, &tracker);
 
 	model.setAvailableCandies(std::set<Colors>{RED, GREEN, YELLOW, BROWN, LIGHT_BLUE, DARK_BLUE});
+	//TODO Check when this error occures
+	/*rotary.startRandMove(800);
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+	rotary.startRandMove(800);
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+	rotary.startRandMove(800);
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+	rotary.startRandMove(800);*/
 	model.setReqStatus(AUTO_CONF);
-	model.setReqStatus(WAIT_PAT);
 
 
 	while (model.getStatus() != SHUTDOWN)
