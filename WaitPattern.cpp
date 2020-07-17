@@ -29,6 +29,7 @@ WaitPattern::WaitPattern(Gantry* gantry, Tracker* tracker, RotaryTable* rotary)
 WaitPattern::~WaitPattern()
 {
 	candiesToRotary();
+	gantry->prepareCatch();
 }
 
 bool WaitPattern::candiesToRotary()
