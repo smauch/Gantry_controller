@@ -110,7 +110,7 @@ bool RotaryTable::checkErr(int &err)
 
 /*************************Function for setting the velocity of the servo motor in U/min*************************************************/
 bool RotaryTable::startVelMode(int velocity, int acceleration, int decceleration) {
-	// Clear error
+	// Clear errorS
 	if (!writeSDO(0x4000, 0x02, 0x01)) {
 		return false;
 	}

@@ -34,7 +34,7 @@ public:
 	bool initMotor();
 
 	/*Use this function to set the params for the ramps and the needed velocity in U/min  */
-	bool startVelMode(int velocity, int acceleration=1000, int decceleration=1000);
+	bool startVelMode(int velocity, int acceleration=500, int decceleration=500);
 	bool moveRel(float angular, int velocity);
 
 	/*Functions to start and stop the movement the movement*/
