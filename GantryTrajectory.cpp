@@ -29,7 +29,6 @@ const Error* GantryTrajectory::StartNew(void)
 void GantryTrajectory::Finish(void)
 {
 
-	std::cout << "fertisch" << posCounter << std::endl;
 }
 
 int GantryTrajectory::GetDim(void)

@@ -100,6 +100,7 @@ public:
 	
 
 private:
+	bool ampInitialized = false;
 	//Global Status
 	bool underVoltage = false;
 

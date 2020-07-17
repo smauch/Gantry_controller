@@ -13,7 +13,7 @@ CML_NAMESPACE_USE();
 //3D fix position initialization
 const std::array<uunit, 3> Gantry::LURK_POS = { 138000, 0, 10000 };
 const std::array<uunit, 3> Gantry::HOME_POS = { 0,0,0 };
-const std::array<uunit, 3> Gantry::DROP_POS = { 17000, 22800, 2000 };
+const std::array<uunit, 3> Gantry::DROP_POS = { 13000, 22800, 6000 };
 const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 97400, 47900, 20000 };
 const std::array<uunit, 3> Gantry::DISC_DROP = { 51000, 48000, 25900 };
 const std::array<uunit, 3> Gantry::STORAGE_BASE = { 18800, 0, 0 };
@@ -43,6 +43,13 @@ const std::array<unsigned short, 3> Gantry::HOME_ORDER = { 2,1,0 };
 //	//exit(1);
 //};
 
+// custom exception for when no candy was found
+struct UndervoltageException : public std::exception {
+	const char* what() const throw() {
+		return "Gantry has undervoltage";
+	}
+};
+
 Gantry::Gantry() {
 
 }
@@ -61,14 +68,24 @@ Gantry::~Gantry()
 
 bool Gantry::handleErr(const Error* err)
 {
-	if (err) {
-		for (int i = 0; i < NUM_AMP; i++)
+	if (err && ampInitialized) {
+
+		//Before not every Amp is initialized don't loop over it
+		try
 		{
-			amp[i].HaltMove();
-			amp[i].Disable();
-			amp[i].ClearHaltedMove();
-			amp[i].ClearFaults();		
+			for (int i = 0; i < NUM_AMP; i++)
+			{
+				amp[i].HaltMove();
+				amp[i].Disable();
+				amp[i].ClearHaltedMove();
+				amp[i].ClearFaults();
+			}
 		}
+		catch (const std::exception&)
+		{
+
+		}
+		
 
 		const char* errCStr = err->toString();
 		std::string errMsg((LPCTSTR)errCStr);
@@ -79,7 +96,7 @@ bool Gantry::handleErr(const Error* err)
 		//Amplifier under voltag
 		if (errId == CMLERR_AmpError_UnderVolt) {
 			underVoltage = true;
-			return false;
+			throw UndervoltageException();
 		}
 		// The amplifier is disabled
 		else if (errId == CMLERR_AmpError_Disabled) {
@@ -268,7 +285,7 @@ bool Gantry::initGantry(unsigned int maxTimeHoming)
 		return false;
 	}
 	//Everything is fine
-
+	ampInitialized = true;
 	updateFillState();
 	return true;
 }
@@ -360,13 +377,23 @@ bool Gantry::catchRotary(double ang, double angVel, float factorRadius, std::arr
 
 	if (getCatched())
 	{
-		setValve(true, 200);
-		dropPos[2] -= 5000;
-		ptpMove(dropPos);
+		if (dropPos == Gantry::DROP_POS) {
+			dropPos[2] += 5000;
+			ptpMove(dropPos);
+			setValve(true, 500);
+			dropPos[2] -= 5000;
+			ptpMove(dropPos);
+		}
+		else {
+			setValve(true, 500);
+			dropPos[2] -= 5000;
+			ptpMove(dropPos);
+		}
 		return true;
 	}
 	else
 	{
+		setValve(true, 1000);
 		return false;
 	}
 }
@@ -687,11 +714,6 @@ bool Gantry::updateFillState()
 			//Fill state empty
 			fillState[it->first] = 0;
 		}
-
-		targetPos[0] = targetPos[0] + 15000;
-		if (!ptpMove(targetPos)) {
-			return false;
-		}
 	}
 	prepareCatch();
 	return true;
@@ -764,7 +786,7 @@ Check if the tool axis caught something.
 */
 bool Gantry::getCatched()
 {
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	const Error* err = NULL;
 	uint16 currentInput;
 	err = amp[TOOL_AXIS].GetInputs(currentInput);
