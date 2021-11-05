@@ -36,15 +36,6 @@ double const Gantry::PIXEL_RADIUS = 540.0;
 //Home order
 const std::array<unsigned short, 3> Gantry::HOME_ORDER = { 2,1,0 };
 
-//static void showerr(const Error* err, const char* msg) {
-//	if (!err) return;
-//	
-//	printf("Error: %s - %s\n", msg, err->toString());
-//	//exit(1);
-//};
-
-// custom exception for when no candy was found
-
 
 Gantry::Gantry() {
 
