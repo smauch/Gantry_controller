@@ -32,7 +32,7 @@ private:
     Status status;
     virtual void execute() {
         getModel()->setJobRunning(this->status);
-        std::cout << "New Status" << getModel()->getStatus() << std::endl;;
+        std::cout << "New Status: " << getModel()->getStatus() << std::endl;;
         this->doJob();
         getModel()->setJobDone();
     }

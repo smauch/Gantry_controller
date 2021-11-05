@@ -18,9 +18,12 @@
 #include <ServeState.h>
 #include <WaiteState.h>
 #include <MaintenanceState.h>
+#include <ResetState.h>
+#include <IdleState.h>
 
 
 #include <stdio.h>
+#include <iostream>
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <pylon/Device.h>
@@ -29,6 +32,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <filesystem>
 //#include <WaitPattern.h>
 //#include <windows.h>
 //#include <shellapi.h>
@@ -55,12 +59,29 @@ void serverOnShutdown()
 
 
 int main(int argc, const char* argv[]) {
+	// Use absolute Paths otherwise the filepaths wont be found when exe is run by startup shell
+	// TODO find solution for this
+	const char CANDIES_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/CADIES_CONFIG.json";
+	const char TRACKER_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release//parameters/TRACKER_CONFIG.json";
+	const char CASCADE_FILE[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/cascade.xml";
+	const char PYLON_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/basler_ace.pfs";
+	const std::array<std::string, 3> AMP_CONFIG{ "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/X-Axis.ccx", "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/Y-Axis.ccx", "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/Z-Axis.ccx" };
 
-	const char CANDIES_CONFIG[] = "./parameters/CADIES_CONFIG.json";
-	const char TRACKER_CONFIG[] = "./parameters/TRACKER_CONFIG.json";
-	const char CASCADE_FILE[] = "./parameters/cascade.xml";
-	const char PYLON_CONFIG[] = "./parameters/basler_ace.pfs";
-	const std::array<std::string,3> AMP_CONFIG{"./parameters/X-Axis.ccx", "./parameters/Y-Axis.ccx", "./parameters/Z-Axis.ccx"};
+	
+	// Static Local IPV4 adress, keep this port
+	utility::string_t address = U("http://192.168.0.110:34568");
+	BackendModel model(BOOT, "");
+	try
+	{
+		serverOnInitialize(address, &model);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		std::cerr << "Failed to start Webserver. Make sure that WIFI Accesspoint is connected. And 192.168.0.110 is configured" << std::endl;
+		system("pause");
+		return -1;
+	}
 
 	Camera camera;
 	Pylon::PylonInitialize();
@@ -69,7 +90,7 @@ int main(int argc, const char* argv[]) {
 	Pylon::IPylonDevice* pDevice = NULL;
 	Pylon::CInstantCamera baslerCamera = Pylon::CInstantCamera();
 	std::vector<ColorTracker> colorTrackers;
-	
+
 	Tracker tracker;
 	cv::Mat currentImage;
 	Gantry gantry;
@@ -79,19 +100,34 @@ int main(int argc, const char* argv[]) {
 	Candy detectedCandies;
 	Colors requestedColor;
 
-	// States
-	// Static Local IPV4 adress, keep this port
-	utility::string_t address = U("http://192.168.0.110:34568");
-	BackendModel model(BOOT, "");
-	serverOnInitialize(address, &model);
-	
 
 	//Initialize 
+	// TODO Case if not connected Hardware wait here
+	int numCameras = tlFactory.EnumerateDevices(deviceList);
+	if (numCameras < 1) {
+		std::cout << "No Camera connected. Waiting for attached camera..." << std::endl;
+	}
+	while (numCameras < 1) {
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+		numCameras = tlFactory.EnumerateDevices(deviceList);
+		model.setErr("Camera not connected");
+	}
+	std::cout << "Start camera initialization" << std::endl;
+	model.setErr("");
 	pDevice = tlFactory.CreateFirstDevice();
 	baslerCamera.Attach(pDevice);
 	baslerCamera.Open();
-	Pylon::CFeaturePersistence::Load(PYLON_CONFIG, &(baslerCamera.GetNodeMap()), true);
+	try
+	{
+		Pylon::CFeaturePersistence::Load(PYLON_CONFIG, &(baslerCamera.GetNodeMap()), true);
+	}
+	catch (GenICam::RuntimeException &exc)
+	{
+		model.setErr("Config files not found");
+		std::cerr << exc.what();
+	}
 	camera = Camera(&baslerCamera);
+	std::cout << "Successfully initialized camera" << std::endl;
 
 	colorTrackers = {
 			ColorTracker("Green", 101, 148, 116),
@@ -102,32 +138,76 @@ int main(int argc, const char* argv[]) {
 			ColorTracker("Light Blue", 153, 83, 83),
 	};
 
+
 	tracker = Tracker::getTrackerFromJson(TRACKER_CONFIG, camera, colorTrackers, CASCADE_FILE);
-	bool status = gantry.networkSetup();
+	bool status = false;
+	status = gantry.networkSetup();
+	if (!status) {
+		std::cerr << "Copley CAN network setup failed.Waiting for attached amplifiers..." << std::endl;
+	}
+	while (!status) {
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+		status = gantry.networkSetup();
+		model.setErr("Copley CAN network setup failed. Waiting for attached amplifiers...");
+	}
 	gantry.attachAmpConifg(AMP_CONFIG);
-	status = gantry.initGantry(30000);
+	model.setErr("");
+	// TODO Solve Copley Error handling so that Error* err is thrown
+
+	while (true) {
+		try
+		{
+			status = gantry.initGantry(30000);
+			if (!status) {
+				std::this_thread::sleep_for(std::chrono::seconds(5));
+				continue;
+			}
+			else {
+				break;
+			}
+		}
+		catch (Gantry::UndervoltageException& e)
+		{
+			std::cerr << "Homing failed make sure to have the door closed." << std::endl;
+			model.setErr("Homing failed make sure to have the door closed");
+			std::this_thread::sleep_for(std::chrono::seconds(5));
+		}	
+	}
+	std::cout << "Homing was sucessfull" << std::endl;
+	model.setErr("");
 
 	status = rotary.initNetwork();
-	bool worked = rotary.initMotor();
+	if (!status) {
+		std::cerr << "BG 75 CAN network setup failed. Waiting for attached motor..." << std::endl;
+	}
+	while (!status) {
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+		status = rotary.initNetwork();
+		model.setErr("BG 75 CAN network setup failed. Waiting for attached motor...");
+	}
+	model.setErr("");
+	status = rotary.initMotor();
+	if (!status) {
+		std::cerr << "BG 75 Error. Make sure to have the door closed." << std::endl;
+	}
+	while (!status) {
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+		status = rotary.initMotor();
+		model.setErr("BG 75 Error. Make sure to have the door closed.");
+	}
+	model.setErr("");
 
-	//ShutdownState shutdown(&model, SHUTDOWN);
-	//MaintState maitenance(&model, MAINTENANCE);
-
-	AutoconfState autoConf(&model, AUTO_CONF, &gantry, &rotary, &tracker);
-	ServeState serving(&model, SERVE, &gantry, &rotary, &tracker);
-	WaitState waiting(&model, WAIT_PAT, &gantry, &rotary, &tracker);
 
 	model.setAvailableCandies(std::set<Colors>{RED, GREEN, YELLOW, BROWN, LIGHT_BLUE, DARK_BLUE});
 	//TODO Check when this error occures
-	/*rotary.startRandMove(800);
-	std::this_thread::sleep_for(std::chrono::seconds(1));
-	rotary.startRandMove(800);
-	std::this_thread::sleep_for(std::chrono::seconds(1));
-	rotary.startRandMove(800);
-	std::this_thread::sleep_for(std::chrono::seconds(1));
-	rotary.startRandMove(800);*/
-	model.setReqStatus(AUTO_CONF);
 
+	// Initialization finished, now other States can subscribe
+	IdleState idle(&model, IDLE);
+	MaintenanceState maitenance(&model, MAINTENANCE, &gantry, &rotary);
+	ResetState reset(&model, RESET, &gantry, &rotary);
+	AutoconfState autoConf(&model, AUTO_CONF, &gantry, &rotary, &tracker);
+	ServeState serving(&model, SERVE, &gantry, &rotary, &tracker);
+	WaitState waiting(&model, WAIT_PAT, &gantry, &rotary, &tracker);
 
 	while (model.getStatus() != SHUTDOWN)
 	{
@@ -135,5 +215,6 @@ int main(int argc, const char* argv[]) {
 	}
 
 	serverOnShutdown();
+	system("pause");
 	return 0;
 }

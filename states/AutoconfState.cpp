@@ -35,9 +35,12 @@ void AutoconfState::doJob()
 		gantry->fillTable(it->first);
 		tracker->autoConfigure(it->first);
 		rotary->stopMovement();
+		// TODO test this
+		//rotary->waitTargetReached(1000);
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		//detect placed candy and bring it back to a defined position
 		int failed_tries = 0;
+		// TODO if these trys to not work throw move plate
 		while (failed_tries < 4) {
 			try {
 				auto start = std::chrono::high_resolution_clock::now();
@@ -98,4 +101,5 @@ void AutoconfState::doJob()
 	std::string candyJsonOut = json11::Json(tracker->getColorTrackers()).dump();
 	outfile << candyJsonOut << std::endl;
 	outfile.close();
+	mod->setReqStatus(IDLE);
 }

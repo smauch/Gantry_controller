@@ -10,6 +10,7 @@ enum Status {
     SERVE,
     MAINTENANCE,
     SHUTDOWN,
+    IDLE,
     ERR
 };
 

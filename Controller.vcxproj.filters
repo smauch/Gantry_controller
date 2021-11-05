@@ -246,11 +246,17 @@
     <ClCompile Include="states\State.cpp">
       <Filter>States</Filter>
     </ClCompile>
-    <ClCompile Include="states\AutoconfState.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="waitpattern\WaitPattern.cpp">
       <Filter>Waitpattern</Filter>
+    </ClCompile>
+    <ClCompile Include="states\AutoconfState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="ResetState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
+    <ClCompile Include="IdleState.cpp">
+      <Filter>States</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -282,6 +288,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="states\State.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResetState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IdleState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

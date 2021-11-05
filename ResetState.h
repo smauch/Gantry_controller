@@ -4,10 +4,10 @@
 #include <Gantry.h>
 #include <Rotarytable.h>
 #include <BackendModel.h>
-class MaintenanceState : public State
+class ResetState : public State
 {
 public:
-	MaintenanceState(BackendModel* mod, Status status, Gantry* gantry, RotaryTable* rotary) : State(mod, status) {
+	ResetState(BackendModel* mod, Status status, Gantry* gantry, RotaryTable* rotary) : State(mod, status) {
 		this->gantry = gantry;
 		this->rotary = rotary;
 		this->mod = mod;

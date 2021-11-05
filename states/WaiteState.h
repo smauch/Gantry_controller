@@ -1,6 +1,5 @@
 #pragma once
 #include "State.h"
-#include "State.h"
 #include <Gantry.h>
 #include <Rotarytable.h>
 #include <Tracker.h>

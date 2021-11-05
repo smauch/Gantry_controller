@@ -143,6 +143,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opencv_world412.lib;XatCOP60-64.lib;GCBase_MD_VC120_v3_0_Basler_pylon_v5_0.lib;GenApi_MD_VC120_v3_0_Basler_pylon_v5_0.lib;PylonBase_MD_VC120_v5_0.lib;PylonC_MD_VC120.lib;PylonGUI_MD_VC120_v5_0.lib;PylonUtility_MD_VC120_v5_0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -210,6 +211,8 @@
     <ClCompile Include="dependencies\CML\c\Utils.cpp" />
     <ClCompile Include="gantry\Gantry.cpp" />
     <ClCompile Include="gantry\GantryTrajectory.cpp" />
+    <ClCompile Include="IdleState.cpp" />
+    <ClCompile Include="ResetState.cpp" />
     <ClCompile Include="rotary\Rotarytable.cpp" />
     <ClCompile Include="states\AutoconfState.cpp" />
     <ClCompile Include="states\MaintenanceState.cpp" />
@@ -224,7 +227,9 @@
     <ClInclude Include="backend-web-server\BackendServer.h" />
     <ClInclude Include="backend-web-server\Status.h" />
     <ClInclude Include="backend-web-server\stdafx.h" />
+    <ClInclude Include="IdleState.h" />
     <ClInclude Include="MaintenanceState.h" />
+    <ClInclude Include="ResetState.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ServeState.h" />
     <ClInclude Include="states\State.h" />

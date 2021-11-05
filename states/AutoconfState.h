@@ -3,6 +3,7 @@
 #include <Gantry.h>
 #include <Rotarytable.h>
 #include <Tracker.h>
+#include <BackendModel.h>
 #include <Color.h>
 #include <Status.h>
 
@@ -13,6 +14,7 @@ public:
 		this->gantry = gantry;
 		this->rotary = rotary;
 		this->tracker = tracker;
+		this->mod = mod;
 	}
 protected:
 	void doJob();
@@ -21,6 +23,7 @@ private:
 	Gantry* gantry;
 	RotaryTable* rotary;
 	Tracker* tracker;
+	BackendModel* mod;
 	const char CANDIES_CONFIG[32] = "./parameters/CADIES_CONFIG.json";
 	std::vector<std::array<CML::uunit, Gantry::NUM_AMP>> candyBuffer;
 };
