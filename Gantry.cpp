@@ -13,7 +13,7 @@ CML_NAMESPACE_USE();
 //3D fix position initialization
 const std::array<uunit, 3> Gantry::LURK_POS = { 138000, 0, 10000 };
 const std::array<uunit, 3> Gantry::HOME_POS = { 0,0,0 };
-const std::array<uunit, 3> Gantry::DROP_POS = { 13000, 22800, 6000 };
+const std::array<uunit, 3> Gantry::DROP_POS = { 11000, 22800, 0 };
 const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 97400, 47900, 20000 };
 const std::array<uunit, 3> Gantry::DISC_DROP = { 51000, 48000, 25900 };
 const std::array<uunit, 3> Gantry::STORAGE_BASE = { 18800, 0, 0 };
@@ -28,7 +28,7 @@ const std::array<uunit, 2> Gantry::DISC_RADIUS = { 8000, 48000 };
 //lower pos, @upper pos
 const std::array<uunit, 2> Gantry::STORAGE_HEIGHT = { 3300, 27100 };
 //1D fix position initialization
-const uunit Gantry::CATCH_Z_HEIGHT = 26100;
+const uunit Gantry::CATCH_Z_HEIGHT = 26500;
 
 const std::map<Colors, uunit> Gantry::Y_STORAGE = { {GREEN, 91100}, {RED, 83500}, {DARK_BLUE,75900}, {YELLOW, 68200},{BROWN, 60600},{LIGHT_BLUE, 53000} };
 //Half of Camera resolution
@@ -44,11 +44,7 @@ const std::array<unsigned short, 3> Gantry::HOME_ORDER = { 2,1,0 };
 //};
 
 // custom exception for when no candy was found
-struct UndervoltageException : public std::exception {
-	const char* what() const throw() {
-		return "Gantry has undervoltage";
-	}
-};
+
 
 Gantry::Gantry() {
 
@@ -69,7 +65,7 @@ Gantry::~Gantry()
 bool Gantry::handleErr(const Error* err)
 {
 	if (err && ampInitialized) {
-
+		std::cerr << err->toString() << std::endl;
 		//Before not every Amp is initialized don't loop over it
 		try
 		{
@@ -85,8 +81,7 @@ bool Gantry::handleErr(const Error* err)
 		{
 
 		}
-		
-
+		setValve(true, 500);
 		const char* errCStr = err->toString();
 		std::string errMsg((LPCTSTR)errCStr);
 		errDescription = errMsg;
@@ -129,15 +124,16 @@ bool Gantry::handleErr(const Error* err)
 			saftyMove();
 			prepareCatch();
 		}
-		globalErr = NULL;
-		for (int i = 0; i < NUM_AMP; i++)
-		{
-			err = this->link[i].GetErrorStatus();
-			if (err) {
-				globalErr = err;
-				// Worst case -  Error after error handling 
-			}
-		}
+		//for (int i = 0; i < NUM_AMP; i++)
+		//{
+		//	const Error* globalErr = this->amp[i].GetErrorStatus();
+		//	const int globalErrId = globalErr->GetID();
+		//	if (globalErrId != CMLERR_Error_OK && globalErrId != CMLERR_AmpError_UnderVolt && globalErrId != CMLERR_AmpError_Disabled) {
+		//		// Worst case -  Error after error handling
+		//		std::cerr << err->toString() << std::endl;
+		//		throw std::runtime_error("Copley Error can not be handeled");
+		//	}
+		//}
 		return true;
 	}
 	else {
@@ -207,15 +203,7 @@ bool Gantry::networkSetup()
 	return true;
 }
 
-
-/**
-Initializes the axes of a gantry.
-
-@param time that should not be exceeded by homing.
-
-@returns CML Error object
-*/
-bool Gantry::initGantry(unsigned int maxTimeHoming)
+bool Gantry::initAmps()
 {
 	const Error* err = NULL;
 	for (short i = 0; i < NUM_AMP; i++)
@@ -243,10 +231,6 @@ bool Gantry::initGantry(unsigned int maxTimeHoming)
 		}
 	}
 	err = link.Init(NUM_AMP, amp);
-	if (handleErr(err)) {
-		return false;
-	}
-	err = homeAxis(maxTimeHoming, HOME_ORDER);
 	if (handleErr(err)) {
 		return false;
 	}
@@ -280,12 +264,37 @@ bool Gantry::initGantry(unsigned int maxTimeHoming)
 			maxJrk = values.jrk;
 		}
 	}
-	err = link.SetMoveLimits(maxVel, maxAcc*0.75, maxDec*0.75, maxJrk);
+	err = link.SetMoveLimits(maxVel, maxAcc * 0.75, maxDec * 0.75, maxJrk);
 	if (handleErr(err)) {
 		return false;
 	}
 	//Everything is fine
 	ampInitialized = true;
+	return true;
+}
+
+
+/**
+Initializes the axes of a gantry.
+
+@param time that should not be exceeded by homing.
+
+@returns CML Error object
+*/
+bool Gantry::initGantry(unsigned int maxTimeHoming)
+{
+	const Error* err = NULL;
+	if (!ampInitialized) {
+		initAmps();
+	}
+	for (int i = 0; i < NUM_AMP; i++)
+	{
+		amp[i].Enable();
+	}
+	err = homeAxis(maxTimeHoming, HOME_ORDER);
+	if (handleErr(err)) {
+		return false;
+	}
 	updateFillState();
 	return true;
 }
@@ -378,10 +387,10 @@ bool Gantry::catchRotary(double ang, double angVel, float factorRadius, std::arr
 	if (getCatched())
 	{
 		if (dropPos == Gantry::DROP_POS) {
-			dropPos[2] += 5000;
+			dropPos[2] += 2000;
 			ptpMove(dropPos);
 			setValve(true, 500);
-			dropPos[2] -= 5000;
+			dropPos[2] -= 2000;
 			ptpMove(dropPos);
 		}
 		else {
@@ -644,6 +653,30 @@ bool Gantry::disable()
 		amp[i].HaltMove();
 		amp[i].Disable();
 	}
+	return true;
+}
+
+bool Gantry::enable()
+{
+	for (int i = 0; i < NUM_AMP; i++)
+	{
+		amp[i].Enable();
+	}
+	return true;
+}
+
+bool Gantry::maintenance()
+{
+	this->prepareCatch();
+	this->disable();
+	return true;
+}
+
+bool Gantry::resetMaintenance()
+{
+	this->enable();
+	this->homeAxis(30000, HOME_ORDER);
+	this->prepareCatch();
 	return true;
 }
 

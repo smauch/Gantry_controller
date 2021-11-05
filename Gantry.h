@@ -67,7 +67,15 @@ public:
 	Gantry();
 	~Gantry();
 
+	struct UndervoltageException : public std::exception {
+		const char* what() const throw() {
+			return "Gantry has undervoltage";
+		}
+	};
+
 	bool networkSetup();
+
+	bool initAmps();
 
 	void attachAmpConifg(std::array<std::string, NUM_AMP> configPaths);
 	//Loads amplifier CME2 configuration files and homes gantry
@@ -88,6 +96,12 @@ public:
 
 	bool disable();
 
+	bool enable();
+
+	bool maintenance();
+
+	bool resetMaintenance();
+
 	bool getUndervoltage();
 
 	bool updateFillState();
@@ -103,9 +117,6 @@ private:
 	bool ampInitialized = false;
 	//Global Status
 	bool underVoltage = false;
-
-	//Global error object
-	const Error* globalErr = NULL;
 
 	bool handleErr(const Error* err);
 
