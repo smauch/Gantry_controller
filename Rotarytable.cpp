@@ -86,11 +86,7 @@ bool RotaryTable::initMotor()
 		return false;
 	}
 	// Check Error register
-	int err = 0;
-	if (! checkErr(err)) {
-		return false;
-	}
-	if (err) {
+	if (! checkErr()) {
 		return false;
 	}
 	// Restore default parameters
@@ -100,12 +96,18 @@ bool RotaryTable::initMotor()
 	return true;
 }
 
-bool RotaryTable::checkErr(int &err)
+bool RotaryTable::checkErr()
 {
-	if (!readSDO(0x4001, 0x01, err)) {
+	int err = 0;
+	!readSDO(0x4001, 0x01, &err);
+	if (err) {
+		std::cerr << "BG Motor Error: " << err << std::endl;
 		return false;
 	}
-	return true;
+	else
+	{
+		return true;
+	}
 }
 
 /*************************Function for setting the velocity of the servo motor in U/min*************************************************/
@@ -129,9 +131,6 @@ bool RotaryTable::startVelMode(int velocity, int acceleration, int decceleration
 	if (! writeSDO(0x4000, 0x02, 0x74)) {
 		return false;
 	}
-	
-
-
 	return true;
 }
 
@@ -177,24 +176,24 @@ bool RotaryTable::stopMovement(void) {
 
 double RotaryTable::getTableAngVel()
 {
-	int rpm;
-	readSDO(0x4A04, 0x02, rpm);
-	double angVel = (((rpm / 36.0) * 2 * M_PI) / 60.0);
+	int actRPM = 0;
+	readSDO(0x4A04, 0x02, &actRPM);
+	double angVel = (((actRPM / 36.0) * 2 * M_PI) / 60.0);
 	return angVel;
 }
 
 int RotaryTable::getMotorVel()
 {
-	int rpm;
-	readSDO(0x4A04, 0x02, rpm);
-	return rpm;
+	int actRPM = 0;
+	readSDO(0x4A04, 0x02, &actRPM);
+	return actRPM;
 }
 
 
 bool RotaryTable::isMoving(void)
 {
 	int status = 0;
-	readSDO(0x4002, 0x01, status);
+	readSDO(0x4002, 0x01, &status);
 	bool moving = status & 0x04;
 	return moving;
 }
@@ -217,41 +216,57 @@ bool RotaryTable::startRandMove(int maxVel)
 
 bool RotaryTable::waitTargetReached(int timeout)
 {
+	// Check is this also appliable in vel mode
+	// TODO apply this ever if need target vel or stopped bsp autoconfig
 	int statusword = 0;
 	bool trReached = false;
 	//qDebug() << "entering while attention";
 	while (! trReached) {
-		readSDO(0x6041, 0x0, statusword);
+		readSDO(0x6041, 0x0, &statusword);
 		trReached = statusword & 0x400;
 	}
-	//qDebug() << "leave while attention";
+
+	std::cout << "finished waitin";
 	return true;
 }
 
-bool RotaryTable::writeSDO(WORD index, BYTE subindex, BOOL value)
+bool RotaryTable::maintenance()
 {
-	COP_SetSDOTimeOut(this->m_Board_Hdl, 2000);
+	this->stopMovement();
+	return true;
+}
+
+bool RotaryTable::writeSDO(WORD index, BYTE subindex, int value)
+{
+	COP_SetSDOTimeOut(this->m_Board_Hdl, 1000);
 	short err = 0;
 	DWORD txlen = sizeof(value);
+	int txdata = value;
 	DWORD abortcode = 0;
-	err = COP_WriteSDO(this->m_Board_Hdl, this->m_node_no_slave, this->m_sdo_no, this->m_mode, index, subindex, txlen, (PBYTE)&value, &abortcode);
+	err = COP_WriteSDO(this->m_Board_Hdl, this->m_node_no_slave, this->m_sdo_no, this->m_mode, index, subindex, txlen, (PBYTE)&txdata, &abortcode);
 	
 	if (err || abortcode) {
-		// TODO Wait short time then set new vel
+		std::cerr << "Failed to write SDO to BG Motor. err:"<<err << " abortcode:" << abortcode << std::endl;
+		throw std::runtime_error("Failed to write SDO from BG Motor");
 		return false;
 	}
 	return true;
 }
 
-bool RotaryTable::readSDO(WORD index, BYTE subindex, int& value)
+bool RotaryTable::readSDO(WORD index, BYTE subindex, int *value)
 {
+	COP_SetSDOTimeOut(this->m_Board_Hdl, 1000);
 	short err;
+	int rxdata;
 	DWORD txlen;
 	DWORD abortcode;
-	err = COP_ReadSDO(this->m_Board_Hdl, this->m_node_no_slave, this->m_sdo_no, this->m_mode, index, subindex, &txlen, (PBYTE)&value, &abortcode);
+	err = COP_ReadSDO(this->m_Board_Hdl, this->m_node_no_slave, this->m_sdo_no, this->m_mode, index, subindex, &txlen, (PBYTE)&rxdata, &abortcode);
 	if (err || abortcode) {
+		std::cerr << "Failed to read SDO from BG Motor. err:" << err << " abortcode:" << abortcode << std::endl;
+		throw std::runtime_error("Failed to read SDO from BG Motor");
 		return false;
 	}
+	*value = rxdata;
 	return true;
 }
 

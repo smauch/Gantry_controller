@@ -44,11 +44,12 @@ public:
 	bool isMoving();
 	bool startRandMove(int maxVel);
 	bool waitTargetReached(int timeout);
+	bool maintenance();
 
 private:
-	bool writeSDO(WORD index, BYTE subindex, BOOL value);
-	bool readSDO(WORD index, BYTE subindex, int &value);
-	bool checkErr(int &err);
+	bool writeSDO(WORD index, BYTE subindex, int value);
+	bool readSDO(WORD index, BYTE subindex, int *value);
+	bool checkErr();
 	//every m_res variable stores information about a possible error of the corresponding step
 	COP_t_HANDLE m_Board_Hdl;
 	GUID m_boardtype;
