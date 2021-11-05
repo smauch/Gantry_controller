@@ -52,13 +52,13 @@ web::http::http_response handler::req_state_endpoint(web::json::value body, web:
 {
     if (body.has_integer_field(U("state"))) {
         int req_state = body.at(U("state")).as_integer();
-        std::set <Status> allowed_req_states = { SHUTDOWN,MAINTENANCE, RESET,WAIT_PAT };
+        std::set <Status> allowed_req_states = { SHUTDOWN, MAINTENANCE, RESET, WAIT_PAT, AUTO_CONF};
         //Is current State == Req State?
+        std::cout << "Req State: " << req_state << std::endl;
         //TODO - Test Cast, what happens if number is larger than Enum
         const bool is_allowed = allowed_req_states.find(Status(req_state)) != allowed_req_states.end();
         if (is_allowed) {
             this->backend_model->setReqStatus(Status(req_state));
-            
             response.set_status_code(web::http::status_codes::OK);
         }
         else {
@@ -75,7 +75,6 @@ web::http::http_response handler::get_status_endpoint(web::json::value body, web
 {
     response.set_status_code(web::http::status_codes::OK);
     response.set_body(this->backend_model->getCurrentStatusJSON());
-   
     return response;
 }
 
