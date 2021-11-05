@@ -304,7 +304,7 @@ void Tracker::autoConfigure(Colors color) {
             }
             catch (const NoCandyException&)
             {
-                //qDebug() << "Found no candy";
+                std::cout << "Found no candies on table, make sure it is empty" << std::endl;
             }
             
             
@@ -317,10 +317,7 @@ void Tracker::autoConfigure(Colors color) {
 
             cv::cvtColor(roi, roiLab, cv::COLOR_BGR2Lab);
             meanLab = meanLab + cv::mean(roiLab) / 60.0;
-            //qDebug() << "Pictures proecessed" << j;
         }
-
-        //qDebug() << "Final value " << meanLab[0] << meanLab[1] << meanLab[2];
 
         colorTrackers[i].setLightness(meanLab[0]);
         colorTrackers[i].setAComponent(meanLab[1]);
