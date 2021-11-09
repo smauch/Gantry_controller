@@ -14,6 +14,7 @@
 
 //States
 #include <AutoconfState.h>
+#include <ShutdownState.h>
 #include <MaintenanceState.h>
 #include <ServeState.h>
 #include <WaiteState.h>
@@ -33,13 +34,15 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
-//#include <WaitPattern.h>
-//#include <windows.h>
-//#include <shellapi.h>
 
+
+
+const char CANDIES_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/CADIES_CONFIG.json";
+const char TRACKER_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release//parameters/TRACKER_CONFIG.json";
+const char CASCADE_FILE[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/cascade.xml";
+const char PYLON_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/basler_ace.pfs";
 
 std::unique_ptr<handler> g_httpHandler;
-
 
 void serverOnInitialize(const utility::string_t& address, BackendModel* model)
 {
@@ -61,10 +64,6 @@ void serverOnShutdown()
 int main(int argc, const char* argv[]) {
 	// Use absolute Paths otherwise the filepaths wont be found when exe is run by startup shell
 	// TODO find solution for this
-	const char CANDIES_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/CADIES_CONFIG.json";
-	const char TRACKER_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release//parameters/TRACKER_CONFIG.json";
-	const char CASCADE_FILE[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/cascade.xml";
-	const char PYLON_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/basler_ace.pfs";
 	const std::array<std::string, 3> AMP_CONFIG{ "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/X-Axis.ccx", "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/Y-Axis.ccx", "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/Z-Axis.ccx" };
 
 	
@@ -129,15 +128,20 @@ int main(int argc, const char* argv[]) {
 	camera = Camera(&baslerCamera);
 	std::cout << "Successfully initialized camera" << std::endl;
 
-	colorTrackers = {
+	if (std::filesystem::exists(CANDIES_CONFIG)) {
+		colorTrackers = ColorTracker::getColorTrackersFromJson(CANDIES_CONFIG);
+	}
+	else {
+		// Default Chocolates
+		colorTrackers = {
 			ColorTracker("Green", 101, 148, 116),
 			ColorTracker("Red", 168, 159, 109),
 			ColorTracker("Dark Blue", 132, 117, 76),
 			ColorTracker("Yellow", 133, 181, 166),
 			ColorTracker("Brown", 140, 136, 94),
 			ColorTracker("Light Blue", 153, 83, 83),
-	};
-
+		};
+	}
 
 	tracker = Tracker::getTrackerFromJson(TRACKER_CONFIG, camera, colorTrackers, CASCADE_FILE);
 	bool status = false;
@@ -168,7 +172,6 @@ int main(int argc, const char* argv[]) {
 		}
 		catch (Gantry::UndervoltageException& e)
 		{
-			std::cerr << "Homing failed make sure to have the door closed." << std::endl;
 			model.setErr("Homing failed make sure to have the door closed");
 			std::this_thread::sleep_for(std::chrono::seconds(5));
 		}	
@@ -176,24 +179,23 @@ int main(int argc, const char* argv[]) {
 	std::cout << "Homing was sucessfull" << std::endl;
 	model.setErr("");
 
-	status = rotary.initNetwork();
-	if (!status) {
-		std::cerr << "BG 75 CAN network setup failed. Waiting for attached motor..." << std::endl;
-	}
-	while (!status) {
-		std::this_thread::sleep_for(std::chrono::seconds(5));
-		status = rotary.initNetwork();
+	bool err = false;
+	err = rotary.initNetwork();
+	if (err) {
 		model.setErr("BG 75 CAN network setup failed. Waiting for attached motor...");
 	}
-	model.setErr("");
-	status = rotary.initMotor();
-	if (!status) {
-		std::cerr << "BG 75 Error. Make sure to have the door closed." << std::endl;
-	}
-	while (!status) {
+	while (err) {
 		std::this_thread::sleep_for(std::chrono::seconds(5));
-		status = rotary.initMotor();
+		err = rotary.initNetwork();
+	}
+	model.setErr("");
+	err = rotary.initMotor();
+	if (err) {
 		model.setErr("BG 75 Error. Make sure to have the door closed.");
+	}
+	while (err) {
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+		err = rotary.initMotor();
 	}
 	model.setErr("");
 
@@ -203,18 +205,23 @@ int main(int argc, const char* argv[]) {
 
 	// Initialization finished, now other States can subscribe
 	IdleState idle(&model, IDLE);
+	ShutdownState shutdown(&model, SHUTDOWN);
 	MaintenanceState maitenance(&model, MAINTENANCE, &gantry, &rotary);
 	ResetState reset(&model, RESET, &gantry, &rotary);
 	AutoconfState autoConf(&model, AUTO_CONF, &gantry, &rotary, &tracker);
 	ServeState serving(&model, SERVE, &gantry, &rotary, &tracker);
 	WaitState waiting(&model, WAIT_PAT, &gantry, &rotary, &tracker);
+	
+	
+	//std::vector<Colors> reqCandies;
+	//reqCandies.push_back(Colors(LIGHT_BLUE));
+	//model.setReqStatus(SERVE);
+	//model.setCandiesToServe(reqCandies);
 
 	while (model.getStatus() != SHUTDOWN)
 	{
 		std::this_thread::sleep_for(std::chrono::seconds(5));
 	}
-
 	serverOnShutdown();
-	system("pause");
 	return 0;
 }

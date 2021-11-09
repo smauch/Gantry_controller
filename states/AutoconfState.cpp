@@ -2,12 +2,12 @@
 
 void AutoconfState::doJob()
 {
+	const char CANDIES_CONFIG[] = "C:/Users/dunkerLinear/Documents/dev/Controller/x64/Release/parameters/CADIES_CONFIG.json";
 	//Clean table
-	rotary->stopMovement();
+	rotary->stopMovement(3000);
 	int failed_tries = 0;
-	while (failed_tries < 4) {
+	while (failed_tries < 5) {
 		try {
-			auto start = std::chrono::high_resolution_clock::now();
 			Candy candy = tracker->getCandyOfColor(ANY);
 			double ang = candy.getCurrentPosition().getAngle();
 			double radiusFact = candy.getCurrentPosition().getR() / tracker->getOuterR();
@@ -17,6 +17,8 @@ void AutoconfState::doJob()
 				gantry->prepareCatch();
 			}
 			else {
+				rotary->startRelMove(PI, 800);
+				rotary->waitTargetReached(2000);
 				gantry->prepareCatch();
 				failed_tries += 1;
 			}
@@ -34,14 +36,10 @@ void AutoconfState::doJob()
 		gantry->prepareCatch();
 		gantry->fillTable(it->first);
 		tracker->autoConfigure(it->first);
-		rotary->stopMovement();
-		// TODO test this
-		//rotary->waitTargetReached(1000);
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		//detect placed candy and bring it back to a defined position
+		rotary->stopMovement(3000);
 		int failed_tries = 0;
 		// TODO if these trys to not work throw move plate
-		while (failed_tries < 4) {
+		while (failed_tries < 5) {
 			try {
 				auto start = std::chrono::high_resolution_clock::now();
 				Candy candy = tracker->getCandyOfColor(it->first, false);
@@ -51,7 +49,6 @@ void AutoconfState::doJob()
 				candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVel / 1000 * 180 / M_PI * elapsed));
 				double ang = candy.getCurrentPosition().getAngle();
 				double radiusFact = candy.getCurrentPosition().getR() / tracker->getOuterR();
-				std::cout << "outer radius" << tracker->getOuterR() << "radius fact" << radiusFact << std::endl;
 				candyBuffer.push_back(Gantry::WAIT_PAT_BASE);
 				candyBuffer[i][1] = candyBuffer[i][1] + i * 12000;
 
@@ -61,6 +58,8 @@ void AutoconfState::doJob()
 					break;
 				}
 				else {
+					rotary->startRelMove(PI, 800);
+					rotary->waitTargetReached(2000);
 					gantry->prepareCatch();
 					failed_tries += 1;
 				}
@@ -74,7 +73,7 @@ void AutoconfState::doJob()
 
 	//clear afterwards the plate and fill the table
 	int len = candyBuffer.size();
-	rotary->startVelMode(50);
+	rotary->startVelMode(100);
 	for (int i = 0; i < len; i++)
 	{
 		//TODO make sure is not empty
@@ -82,19 +81,14 @@ void AutoconfState::doJob()
 			candyBuffer.erase(candyBuffer.begin());
 		}
 		else {
-			//TODO Not Catched
+			// Failed to catch Candy
+			// TODO implement spike search
 		}
 		
 	}
-	// place one piece of each color on the table
-	//gantry->prepareCatch();
-	//for (auto it = Gantry::Y_STORAGE.begin(); it != Gantry::Y_STORAGE.end(); it++)
-	//{
-	//	gantry->fillTable(it->first);
-	//}
-	//rotary->stopMovement();
 	gantry->prepareCatch();
 	rotary->startRandMove(1000);
+	rotary->waitTargetReached(2000);
 	std::ofstream outfile;
 	outfile.open(CANDIES_CONFIG);
 	// write data into the json file.

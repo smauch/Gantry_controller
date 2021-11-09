@@ -6,11 +6,11 @@ void ServeState::doJob()
 	failedTrys = 0;
 	if (getModel()->getCandiesToServe().size()) {
 		reqCandy = getModel()->getCandiesToServe().front();
-		while (failedTrys <= 3) {
-			failedTrys++;
-			rotary->startRandMove(800);
+		while (failedTrys <= 4) {
+			//rotary->startRandMove(800);
+			rotary->startVelMode(800);
 			gantry->prepareCatch();
-			std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+			rotary->waitTargetReached(2000);
 			double angVelStart = rotary->getTableAngVel();
 			try
 			{
@@ -24,7 +24,7 @@ void ServeState::doJob()
 				candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVelStart / 1000 * 180 / M_PI * elapsed));
 				double ang = candy.getCurrentPosition().getAngle();
 				float radiusFact = candy.getCurrentPosition().getR() / tracker->getOuterR();
-				bool success = gantry->catchRotary(ang, angVelStart, radiusFact, Gantry::DROP_POS);
+				bool success = gantry->catchRotary(ang, angVelEnd, radiusFact, Gantry::DROP_POS);
 				if (success) {
 					// Model sucessfull
 					getModel()->setCandyServeDone();

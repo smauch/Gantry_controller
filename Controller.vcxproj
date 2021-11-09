@@ -214,6 +214,7 @@
     <ClCompile Include="IdleState.cpp" />
     <ClCompile Include="ResetState.cpp" />
     <ClCompile Include="rotary\Rotarytable.cpp" />
+    <ClCompile Include="ShutdownState.cpp" />
     <ClCompile Include="states\AutoconfState.cpp" />
     <ClCompile Include="states\MaintenanceState.cpp" />
     <ClCompile Include="states\ServeState.cpp" />
@@ -232,6 +233,7 @@
     <ClInclude Include="ResetState.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ServeState.h" />
+    <ClInclude Include="ShutdownState.h" />
     <ClInclude Include="states\State.h" />
     <ClInclude Include="WaiteState.h" />
   </ItemGroup>

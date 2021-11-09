@@ -3,6 +3,7 @@
 
 void WaitState::doJob()
 {
+	// TODO check if this is needed
 	for (auto it = Gantry::Y_STORAGE.begin(); it != Gantry::Y_STORAGE.end(); it++)
 	{
 		int currFillHeight = gantry->getFillState(it->first);
@@ -13,10 +14,11 @@ void WaitState::doJob()
 		}
 	}
 	rotary->startVelMode(500);
+	rotary->waitTargetReached(2000);
 	gantry->prepareCatch();
-	std::vector<Colors> test = { LIGHT_BLUE,LIGHT_BLUE,LIGHT_BLUE,RED };
-	RunningCandy myRunner(test, gantry, tracker, rotary);
+	std::vector<Colors> sortColors = { LIGHT_BLUE,LIGHT_BLUE,LIGHT_BLUE,RED };
+	RunningCandy myRunner(sortColors, gantry, tracker, rotary);
+	// Run sorting twice
 	myRunner.runCandy();
 	myRunner.runCandy();
-
 }

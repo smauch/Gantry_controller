@@ -258,6 +258,9 @@
     <ClCompile Include="IdleState.cpp">
       <Filter>States</Filter>
     </ClCompile>
+    <ClCompile Include="ShutdownState.cpp">
+      <Filter>States</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="backend-web-server\BackendServer.h">
@@ -294,6 +297,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IdleState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShutdownState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,6 +7,8 @@ void ResetState::doJob()
 		{
 			gantry->resetMaintenance();
 			rotary->initMotor();
+			rotary->startRandMove(800);
+			break;
 		}
 		catch (Gantry::UndervoltageException& e)
 		{

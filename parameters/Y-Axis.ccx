@@ -132,7 +132,7 @@ ea,0,Detent Correction Gain,0
 7e,0,Input 7 Config,0
 7f,0,Input 8 Config,0
 b3,0,Analog Encoder Scale,6667
-b8,0,Positive Software Limit,93000
+b8,0,Positive Software Limit,95000
 b9,0,Negative Software Limit,-100
 bf,0,Home Current Delay Time,250
 c1,0,Node ID configuration,2048

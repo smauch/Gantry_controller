@@ -24,7 +24,6 @@ private:
 	RotaryTable* rotary;
 	Tracker* tracker;
 	BackendModel* mod;
-	const char CANDIES_CONFIG[32] = "./parameters/CADIES_CONFIG.json";
 	std::vector<std::array<CML::uunit, Gantry::NUM_AMP>> candyBuffer;
 };
 
