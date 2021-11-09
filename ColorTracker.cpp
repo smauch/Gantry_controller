@@ -34,7 +34,7 @@ ColorTracker::ColorTracker() {
  */
 ColorTracker::ColorTracker(json11::Json json) {
     this->name = json["name"].string_value();
-    this->lightness = json["lighntess"].int_value();
+    this->lightness = json["lightness"].int_value();
     this->aComponent = json["aComponent"].int_value();
     this->bComponent = json["bComponent"].int_value();
 }

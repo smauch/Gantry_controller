@@ -1,6 +1,5 @@
 
 #include "Tracker.h"
-//#include <QtCore/QDebug>
 
 /**
  * constructor of tracker
@@ -96,7 +95,6 @@ Colors Tracker::detectColorOfCandy(cv::Mat image)  {
             bestColor = static_cast<Colors>(i);
         }
     }
-
     return bestColor;
 }
 
@@ -240,18 +238,19 @@ int Tracker::getOuterR()
 }
 
 
-Tracker Tracker::getTrackerFromJson(std::string filepath, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile)
+Tracker Tracker::getTrackerFromJson(std::string trackerConfigPath, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile)
 {
+
     std::string line;
-    std::ifstream jsonfile(filepath);
+    std::ifstream jsonfile(trackerConfigPath);
     if (jsonfile.is_open()) {
         std::getline(jsonfile, line);
     }
     jsonfile.close();
     std::string err;
-    json11::Json json = json11::Json::parse(line, err);
+    json11::Json trackerJson = json11::Json::parse(line, err);
     Tracker tracker;
-    tracker = Tracker(json, camera, colorTrackers, cascadeFile);
+    tracker = Tracker(trackerJson, camera, colorTrackers, cascadeFile);
     return tracker;
 }
 

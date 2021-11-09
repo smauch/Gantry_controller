@@ -13,6 +13,7 @@
 #include "Coordinates.h"
 #include "Camera.h"
 #include "json11.hpp"
+#include <filesystem>
 #include <exception>
 #include "imageStuff.h"
 #include <chrono>
@@ -81,7 +82,7 @@ class Tracker {
         std::vector<ColorTracker> getColorTrackers() { return this->colorTrackers; }
 
         // creates a vector of ColorTrackers from a single json file
-        static Tracker getTrackerFromJson(std::string filepath, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile);
+        static Tracker getTrackerFromJson(std::string trackerConfigPath, Camera camera, std::vector<ColorTracker> colorTrackers, std::string cascadeFile);
 };
 
 #endif

@@ -48,6 +48,5 @@ class ColorTracker {
         json11::Json to_json() const;
         // creates a vector of ColorTrackers from a single json file
         static std::vector<ColorTracker> getColorTrackersFromJson(std::string filepath);
-
 };
 #endif
