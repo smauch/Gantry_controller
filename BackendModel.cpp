@@ -79,6 +79,7 @@ std::queue<Colors> BackendModel::getCandiesToServe()
 
 void BackendModel::setErr(std::string err)
 {
+	std::cerr << err << std::endl;
 	this->errorStr = err;
 	this->notify();
 }
