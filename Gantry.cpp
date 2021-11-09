@@ -13,12 +13,12 @@ CML_NAMESPACE_USE();
 //3D fix position initialization
 const std::array<uunit, 3> Gantry::LURK_POS = { 138000, 0, 10000 };
 const std::array<uunit, 3> Gantry::HOME_POS = { 0,0,0 };
-const std::array<uunit, 3> Gantry::DROP_POS = { 11000, 22800, 0 };
+const std::array<uunit, 3> Gantry::DROP_POS = { 11000, 25000, 2000 };
 const std::array<uunit, 3> Gantry::DISC_CENTER_POS = { 97400, 47900, 20000 };
 const std::array<uunit, 3> Gantry::DISC_DROP = { 51000, 48000, 25900 };
 const std::array<uunit, 3> Gantry::STORAGE_BASE = { 18800, 0, 0 };
 const std::array<uunit, 3> Gantry::STORAGE_SAFE_POS = { 26000, 71000, 0 };
-const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 34000, 30000, 26500 };
+const std::array<uunit, 3> Gantry::WAIT_PAT_BASE = { 34000, 33000, 26600 };
 
 const  std::array<uunit, 3> Gantry::CANDY_SIZE = { 8800, 6720, 1500 };
 //2D fix position initialization
@@ -45,7 +45,6 @@ Gantry::Gantry() {
 
 Gantry::~Gantry()
 {
-	this->saftyMove();
 	this->homeAxis(30000, HOME_ORDER);
 	for (int i = 0; i < NUM_AMP; i++)
 	{
@@ -274,6 +273,7 @@ Initializes the axes of a gantry.
 */
 bool Gantry::initGantry(unsigned int maxTimeHoming)
 {
+	std::cout << "init Gantry..." << std::endl;
 	const Error* err = NULL;
 	if (!ampInitialized) {
 		initAmps();
@@ -287,6 +287,7 @@ bool Gantry::initGantry(unsigned int maxTimeHoming)
 		return false;
 	}
 	updateFillState();
+	std::cout << "Gantry initialized" << std::endl;
 	return true;
 }
 
@@ -321,7 +322,7 @@ const Error *Gantry::homeAxis(unsigned int maxTime, std::array<unsigned short, N
 }
 
 /**
-Catches a Candy that is moving on the rotary table
+Catches a Candy that is moving on the rotary table. Attention drop pos is in Z-Axis 2000 higher than passed one to don't touch the ground.
 
 @param angularVel the angular velocity of the candy in rad/ms
 @param angular the angular of the candy relative to the camera perspective
@@ -335,6 +336,7 @@ bool Gantry::catchRotary(double ang, double angVel, float factorRadius, std::arr
 	const Error* err = NULL; 
 	auto start_move = std::chrono::high_resolution_clock::now();
 	//Radius scaling from pixel to uunit
+	dropPos[2] -= 2000;
 	double radius = DISC_RADIUS[1] * factorRadius;
 	if (radius < DISC_RADIUS[0] || radius > DISC_RADIUS[1]){
 		throw std::out_of_range("Radius out of range");
@@ -344,9 +346,14 @@ bool Gantry::catchRotary(double ang, double angVel, float factorRadius, std::arr
 
 	//Trajectory object
 	trj.attachMoveLimits(this->posLimit);
-
-	trj.calcMovement(getPos(), radius, ang, angVel, dropPos, maxTime);
-
+	try
+	{
+		trj.calcMovement(getPos(), radius, ang, angVel, dropPos, maxTime);
+	}
+	catch (const std::out_of_range&)
+	{
+		return false;
+	}
 	auto stop_clac = std::chrono::high_resolution_clock::now();
 	err = link.SendTrajectory(trj, false);
 	if (handleErr(err)) {
@@ -377,18 +384,11 @@ bool Gantry::catchRotary(double ang, double angVel, float factorRadius, std::arr
 
 	if (getCatched())
 	{
-		if (dropPos == Gantry::DROP_POS) {
 			dropPos[2] += 2000;
 			ptpMove(dropPos);
-			setValve(true, 500);
+			setValve(true, 200);
 			dropPos[2] -= 2000;
 			ptpMove(dropPos);
-		}
-		else {
-			setValve(true, 500);
-			dropPos[2] -= 5000;
-			ptpMove(dropPos);
-		}
 		return true;
 	}
 	else

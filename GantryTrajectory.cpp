@@ -239,15 +239,15 @@ void GantryTrajectory::calcMovement(std::array<uunit, 3> actPos, double radius, 
 	for (int t = 0; t < NUMBER_POS_CALC; t++)
 	{
 		if ((posLimit[0].neg > xPos[t]) || (xPos[t] > (posLimit[0].pos + 1000))) {
-			std::cout << "Trajectroy out of software position limit, val: " << xPos[t] << "radius:" << radius << "angVel:" << angVel << std::endl;
+			std::cerr << "Trajectory out of software position limit, X-Value: " << xPos[t] << "radius:" << radius << "angVel:" << angVel << std::endl;
 			throw std::out_of_range("Trajectroy out of software X position limit");
 		}
 		if ((posLimit[1].neg > yPos[t]) || (yPos[t] > (posLimit[1].pos + 1000))) {
-			std::cout << "Trajectroy out of software Y position limit, val:" << yPos[t] << "radius:" << radius << "angVel:" << angVel << std::endl;
+			std::cerr << "Trajectory out of software position limit, Y-Value:" << yPos[t] << "radius:" << radius << "angVel:" << angVel << std::endl;
 			throw std::out_of_range("Trajectroy out of software position limit");
 		}
 		if ((posLimit[2].neg > zPos[t]) || (zPos[t] > (posLimit[2].pos + 1000))) {
-			std::cout << "Trajectroy out of software position Z limit, val:" << zPos[t] << "radius:" << radius << "angVel:" << angVel << std::endl;
+			std::cerr << "Trajectory out of software position Z limit, Z-Value:" << zPos[t] << "radius:" << radius << "angVel:" << angVel << std::endl;
 			throw std::out_of_range("Trajectroy out of software position limit");
 		}
 	}
