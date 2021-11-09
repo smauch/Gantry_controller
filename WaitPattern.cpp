@@ -59,6 +59,7 @@ bool WaitPattern::getFromRotary(std::map<std::array<uunit, Gantry::NUM_AMP>, Col
 		Colors targetCandy = reqCandy;
 		while (failedTries < 3) {
 			gantry->prepareCatch();
+			rotary->waitTargetReached(2000);
 			double angVelStart = rotary->getTableAngVel();
 			try
 			{
@@ -115,88 +116,3 @@ void RunningCandy::calcTargetPos(std::vector<Colors> candies)
 		candiesTo.insert({ currPos, it });
 	}
 }
-
-//void CandyTower::buildTower(Gantry* gantry, Tracker* tracker, RotaryTable* rotary)
-//{
-//	pos_store.push_back(POS1);
-//	pos_store.push_back(POS2);
-//	pos_store.push_back(POS3);
-//	pos_store.push_back(POS4);
-//	pos_store.push_back(POS5);
-//
-//	bool catched;
-//	int i = 0;
-//	for (auto it = pos_store.begin(); it < pos_store.end(); it++)
-//	{
-//		try
-//		{
-//			Colors nextCandy = static_cast<Colors>(i);
-//			auto start = std::chrono::high_resolution_clock::now();
-//			Candy candy = tracker->getCandyOfColor(nextCandy, false);
-//			auto end = std::chrono::high_resolution_clock::now();
-//			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-//			double angVel = rotary->getTableAngVel();
-//			candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVel / 1000 * 180 / M_PI * elapsed));
-//			catched = gantry->catchRotary(angVel, candy.getCurrentPosition().getAngle(), candy.getCurrentPosition().getR(), *it);
-//
-//		}
-//		catch (const NoCandyException&)
-//		{
-//			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-//			//make something
-//		}
-//		if (catched)
-//		{
-//			placed_candies.push_back(*it);
-//			i += 1;
-//
-//		}
-//	}
-//}
-//
-//void CandyCircle::buildCircle(Gantry* gantry, Tracker* tracker, RotaryTable* rotary)
-//{
-//	pos_store.push_back(POS1);
-//	pos_store.push_back(POS2);
-//	pos_store.push_back(POS3);
-//	pos_store.push_back(POS4);
-//	pos_store.push_back(POS5);
-//	pos_store.push_back(POS6);
-//	pos_store.push_back(POS7);
-//	pos_store.push_back(POS8);
-//	bool catched;
-//	int i = 0;
-//	for (auto it = pos_store.begin(); it < pos_store.end(); it++)
-//	{
-//		try
-//		{
-//			if (i >= 7)
-//			{
-//				i = i - 7;
-//			}
-//			Colors nextCandy = static_cast<Colors>(i);
-//			auto start = std::chrono::high_resolution_clock::now();
-//			Candy candy = tracker->getCandyOfColor(nextCandy, false);
-//			auto end = std::chrono::high_resolution_clock::now();
-//			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-//			double angVel = rotary->getTableAngVel();
-//			candy.setCurrentPosition(candy.getCurrentPosition().rotate(angVel / 1000 * 180 / M_PI * elapsed));
-//			catched = gantry->catchRotary(angVel, candy.getCurrentPosition().getAngle(), candy.getCurrentPosition().getR(), *it);
-//
-//		}
-//		catch (const NoCandyException&)
-//		{
-//			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-//			//make something
-//		}
-//		if (catched)
-//		{
-//			placed_candies.push_back(*it);
-//			i += 1;
-//
-//		}
-//	}
-//
-//
-//}
-
