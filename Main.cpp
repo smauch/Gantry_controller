@@ -8,30 +8,34 @@
 
 int main() {
 	RotaryTable rotary;
-	bool status = false;
-	status = rotary.initNetwork();
-	if (!status) {
+	bool err = false;
+	err = rotary.initNetwork();
+	if (err) {
 		std::cerr << "BG 75 CAN network setup failed. Waiting for attached motor..." << std::endl;
 	}
-	while (!status) {
+	while (err) {
 		std::this_thread::sleep_for(std::chrono::seconds(5));
-		status = rotary.initNetwork();
+		err = rotary.initNetwork();
 	}
-	status = rotary.initMotor();
-	if (!status) {
+	err = rotary.initMotor();
+	if (err) {
 		std::cerr << "BG 75 Error. Make sure to have the door closed." << std::endl;
 	}
-	while (!status) {
+	while (err) {
 		std::this_thread::sleep_for(std::chrono::seconds(5));
-		status = rotary.initMotor();
+		err = rotary.initMotor();
 	}
+
 	while (true) {
-		rotary.startVelMode(100);
-		std::this_thread::sleep_for(std::chrono::seconds(3));
-		std::cout << "was set to 100, return: " << rotary.getMotorVel() << std::endl;
-		rotary.startVelMode(-100);
-		std::this_thread::sleep_for(std::chrono::seconds(3));
-		std::cout << "was set to -100, return:  " << rotary.getMotorVel() << std::endl;
+		//rotary.startRandMove(-1000);
+		rotary.startVelMode(800);
+		rotary.waitTargetReached(2000);
+		rotary.getTableAngVel();
+		rotary.stopMovement(2000);
+		rotary.getTableAngVel();
+		rotary.startRelMove(3.14, 500);
+		rotary.waitTargetReached(3000);
+		system("pause");
 	}
-	system("pause");
+
 }

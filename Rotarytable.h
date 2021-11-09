@@ -20,10 +20,19 @@ extern "C"
 //Needed for type def
 #include "objbase.h"
 #include <Cop.h>
+#include <exception>
 
+
+// custom exception when reading or writing SDO fails
+struct CanOpenErr : public std::exception {
+	const char* what() const throw() {
+		return "Failed writing or reading SDO";
+	}
+};
 
 class RotaryTable
 {
+
 public:
 
 	/*Constructor and destructor for any instances of the rotarytable class */
@@ -34,21 +43,21 @@ public:
 	bool initMotor();
 
 	/*Use this function to set the params for the ramps and the needed velocity in U/min  */
-	bool startVelMode(int velocity, int acceleration=500, int decceleration=500);
-	bool moveRel(float angular, int velocity);
+	bool startVelMode(int velocity, int acceleration=1000, int decceleration=1000);
+	bool startRelMove(double angular, int velocity);
 
 	/*Functions to start and stop the movement the movement*/
-	bool stopMovement();
+	bool stopMovement(int timeout);
 	double getTableAngVel();
 	int getMotorVel();
 	bool isMoving();
 	bool startRandMove(int maxVel);
 	bool waitTargetReached(int timeout);
-	bool maintenance();
 
 private:
 	bool writeSDO(WORD index, BYTE subindex, int value);
 	bool readSDO(WORD index, BYTE subindex, int *value);
+	void cleanErr();
 	bool checkErr();
 	//every m_res variable stores information about a possible error of the corresponding step
 	COP_t_HANDLE m_Board_Hdl;
