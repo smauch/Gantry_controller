@@ -1,6 +1,3 @@
-[submodule "backend-server"]
-	path = backend-server
-	url = https://github.com/smauch/Gantry_backend-server
 [submodule "gantry"]
 	path = gantry
 	url = https://github.com/smauch/Gantry_gantry
@@ -13,3 +10,6 @@
 [submodule "waitpattern"]
 	path = waitpattern
 	url = https://github.com/smauch/Gantry_waitpattern
+[submodule "backend-server"]
+	path = backend-server
+	url = https://github.com/smauch/Gantry_backend-server
