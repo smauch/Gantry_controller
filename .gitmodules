@@ -1,15 +1,15 @@
-[submodule "backend-web-server"]
-	path = backend-web-server
-	url = https://gitlab.com/linkit-tech/projects/smart_robotics/backend-web-server.git
+[submodule "web-server"]
+	path = web-server
+	url = https://github.com/smauch/Gantry_web-server
 [submodule "gantry"]
 	path = gantry
-	url = https://gitlab.com/linkit-tech/projects/smart_robotics/gantry.git
+	url = https://github.com/smauch/Gantry_gantry
 [submodule "rotary"]
 	path = rotary
-	url = https://gitlab.com/linkit-tech/projects/smart_robotics/rotary.git
+	url = https://github.com/smauch/Gantry_rotary
 [submodule "cv"]
 	path = cv
-	url = https://gitlab.com/linkit-tech/projects/smart_robotics/cv.git
+	url = https://github.com/smauch/Gantry_cv
 [submodule "waitpattern"]
 	path = waitpattern
-	url = https://gitlab.com/linkit-tech/projects/smart_robotics/waitpattern.git
+	url = https://github.com/smauch/Gantry_waitpattern
