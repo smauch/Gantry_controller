@@ -1,6 +1,6 @@
-[submodule "web-server"]
-	path = web-server
-	url = https://github.com/smauch/Gantry_web-server
+[submodule "backend-server"]
+	path = backend-server
+	url = https://github.com/smauch/Gantry_backend-server
 [submodule "gantry"]
 	path = gantry
 	url = https://github.com/smauch/Gantry_gantry
