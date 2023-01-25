@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29613.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Drehteller", "Drehteller.vcxproj", "{2329EAB2-371F-493E-AC83-2137F5EF5AB0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2329EAB2-371F-493E-AC83-2137F5EF5AB0}.Debug|x64.ActiveCfg = Debug|x64
+		{2329EAB2-371F-493E-AC83-2137F5EF5AB0}.Debug|x64.Build.0 = Debug|x64
+		{2329EAB2-371F-493E-AC83-2137F5EF5AB0}.Debug|x86.ActiveCfg = Debug|Win32
+		{2329EAB2-371F-493E-AC83-2137F5EF5AB0}.Debug|x86.Build.0 = Debug|Win32
+		{2329EAB2-371F-493E-AC83-2137F5EF5AB0}.Release|x64.ActiveCfg = Release|x64
+		{2329EAB2-371F-493E-AC83-2137F5EF5AB0}.Release|x64.Build.0 = Release|x64
+		{2329EAB2-371F-493E-AC83-2137F5EF5AB0}.Release|x86.ActiveCfg = Release|Win32
+		{2329EAB2-371F-493E-AC83-2137F5EF5AB0}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5DF11A42-E0C6-4F0B-ACCD-C6F31F82AC66}
+	EndGlobalSection
+EndGlobal

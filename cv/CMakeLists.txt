@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project( controller )
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( controller main.cpp imageStuff.cpp Coordinates.cpp Candy.cpp Tracker.cpp ColorTracker.cpp) 
+target_link_libraries( controller ${OpenCV_LIBS} )
